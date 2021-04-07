@@ -1,0 +1,2 @@
+Pi2 /home/adamt/work/2pi_analysis/finalstate/config_noneall_ecorr_10ns_noFTelcorr_v1.root
+

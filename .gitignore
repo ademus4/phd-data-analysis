@@ -1,0 +1,14 @@
+.vscode/
+finalstate/*.root
+main.cfg
+notes
+output
+
+# C++
+*.d
+*.so
+*.pcm
+
+
+# emacs 
+*~
