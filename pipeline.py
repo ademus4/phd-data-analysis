@@ -26,7 +26,7 @@ class BuildFinalState(ExternalProgramTask):
 
 class FinalState(luigi.Task):
     input_file = luigi.Parameter()
-    output_dir = luigi.Parameter()
+    output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
     config_file = luigi.Parameter()
 
     def output(self):
@@ -76,10 +76,9 @@ class TestAnalysis(luigi.Task):
 
 class ApplyCuts(luigi.Task):
     input_file = luigi.Parameter()
-    output_dir = luigi.Parameter()
+    output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
 
     def output(self):
-        # something here like filename+cuts.root
         _, fname = os.path.split(self.input_file)
         folder = fname.replace('.hipo', '')
         output_path = os.path.join(self.output_dir, folder, 'data_cuts.root')
@@ -104,19 +103,22 @@ class ApplyCuts(luigi.Task):
         #  .Filter("Pi2MissP < 0.5") \
         #  .Filter("0.8 < Pi2MissMassnP < 1.1") \
           
-          
 
 class MomentFitting(luigi.Task):
     data_file = luigi.Parameter()
     sim_file = luigi.Parameter()
     nevents = luigi.Parameter()    
     mcmc = luigi.Parameter()
+    output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
 
     def requires(self):
         yield ApplyCuts(input_file=self.data_file), ApplyCuts(input_file=self.sim_file)
 
     def output(self):
-        file_path = os.path.join(os.getcwd(), 'output', 'moments')
+        #file_path = os.path.join(os.getcwd(), 'output', 'moments')
+        file_path = None  # fix this with environment variable
+        # output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
+
         return luigi.LocalTarget(file_path)
 
     def run(self):
@@ -156,11 +158,12 @@ class MomentFitting(luigi.Task):
 
 class Plotting(luigi.Task):
     input_file = luigi.Parameter()
+    output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
 
     def output(self):
         prefix = self.input()[0][0].path.split('/')[-1]
-        file_path = os.path.join('./plots/', prefix)
-        return luigi.LocalTarget(file_path)
+        output_path = os.path.join(self.output_dir, prefix, 'plots')
+        return luigi.LocalTarget(output_path)
 
     def requires(self):
         yield FinalState(input_file=self.input_file), ApplyCuts(input_file=self.input_file)
@@ -205,7 +208,7 @@ class BulkFinalState(luigi.WrapperTask):
 
 if __name__ == '__main__':
     luigi.build(
-        [Plotting(input_file='/data/sims/job_2675.hipo')],
+        [Plotting()],
         workers=1, 
         local_scheduler=True
     )
