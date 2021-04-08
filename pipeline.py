@@ -85,12 +85,9 @@ class MomentFitting(luigi.Task):
     def requires(self):
         yield ApplyCuts(input_file=self.data_file), ApplyCuts(input_file=self.sim_file)
 
-    def output(self):
-        #file_path = os.path.join(os.getcwd(), 'output', 'moments')
-        file_path = None  # fix this with environment variable
-        # output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
-
-        return luigi.LocalTarget(file_path)
+    def output(self):        
+        output_path = os.path.join(self.output_dir, 'moments')
+        return luigi.LocalTarget(output_path)
 
     def run(self):
         # save input conditions as txt file inside output folder?
@@ -99,18 +96,9 @@ class MomentFitting(luigi.Task):
         output_path = self.output().path
         os.mkdir(self.output().path)
 
-        # set the paths for brufit
-        #data_path = os.path.join(
-        #    self.input()[0][0].path, 
-        #    'adamt/Pi2_config__/FinalState.root'
-        #)
-        #sim_path = os.path.join(
-        #    self.input()[0][1].path, 
-        #    'adamt/Pi2_config__/FinalState.root'
-        #)
         data_path = self.input()[0][0].path
         sim_path = self.input()[0][1].path
-        data_tree = 'Filtered'
+        data_tree = 'FINALOUTTREE'
         #sim_data_tree = 'Filtered'
 
         # load brufit root code
