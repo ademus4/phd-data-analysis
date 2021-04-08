@@ -45,35 +45,6 @@ class FinalState(luigi.Task):
         ROOT.Run_Pi2(self.input_file, self.config_file, self.output().path)
         
 
-class TestAnalysis(luigi.Task):
-    input_file = luigi.Parameter()
-
-    def output(self):
-        prefix = self.input()[0].path.split('/')[-1]
-        file_path = os.path.join('./plots/', prefix)
-        return luigi.LocalTarget(file_path)
-
-    def requires(self):
-        yield FinalState(input_file=self.input_file)
-
-    def run(self):
-        file_path = os.path.join(
-            self.input()[0].path, 
-            'adamt/Pi2_config__/particleData/ParticleVariables_0.root'
-        )
-        A = Analysis(output_dir=self.output().path)
-        A.load_data(file_path)
-
-        os.mkdir(self.output().path)
-
-        A.plot_exc_cuts()
-        A.plot_timing()
-        A.plot_mesons()
-        A.plot_mesons(cuts=True)
-        A.plot_meson_2D(cuts=True)
-        A.plot_meson_decay_angle(cuts=True)
-
-
 class ApplyCuts(luigi.Task):
     input_file = luigi.Parameter()
     output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
