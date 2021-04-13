@@ -15,10 +15,10 @@
 
   //apply some general cuts
   ParticleCutsManager pcm{"DeltaTimeCuts",1};  //1==apply!
-  pcm.AddParticleCut("e-",    new DeltaTimeCut(10));
-  pcm.AddParticleCut("proton",new DeltaTimeCut(10));
-  pcm.AddParticleCut("pi+",   new DeltaTimeCut(10));
-  pcm.AddParticleCut("pi-",   new DeltaTimeCut(10));
+  pcm.AddParticleCut("e-",    new DeltaTimeCut(1));
+  pcm.AddParticleCut("proton",new DeltaTimeCut(1));
+  pcm.AddParticleCut("pi+",   new DeltaTimeCut(1));
+  pcm.AddParticleCut("pi-",   new DeltaTimeCut(1));
   FS->RegisterPostTopoAction(pcm);
 
   //for simulations, to correct for start time
@@ -34,6 +34,11 @@
   ParticleCorrectionManager pcorrm{"FTelEnergyCorrection"};
   pcorrm.AddParticle("e-",new FTel_pol4_ECorrection());
   FS->RegisterPreTopoAction(pcorrm);
+
+
+  truth matching
+  EventTruthAction etra("EventTruth");
+  FS->RegisterPostKinAction(etra); //PostKin
 
   //write out config
   FS->WriteToFile("./finalstate/config.root");

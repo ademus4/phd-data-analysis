@@ -9,10 +9,11 @@ namespace adamt{
     //Note if particle is added to final with a valid genID it will be used
     //to determine the correct permutation of the simulated event
       
-    AddParticle("Electron",&_electron,kTRUE,-1);
-    AddParticle("Proton",&_proton,kTRUE,-1);
-    AddParticle("Pip",&_pip,kTRUE,-1);
-    AddParticle("Pim",&_pim,kTRUE,-1);
+    //last value for MC truth matching, id from el spectro 2pi script
+    AddParticle("Electron",&_electron,kTRUE, 3);  //3
+    AddParticle("Proton",&_proton,kTRUE, 2);      //2
+    AddParticle("Pip",&_pip,kTRUE, 0);            //0
+    AddParticle("Pim",&_pim,kTRUE, 1);            //1
     //AddParticle("Name",particle,true/false you want to write in final vector, genID for linking to generated truth value)
     // AddParticle("PARTICLE",&_PARTICLE,kTRUE,-1);
 
