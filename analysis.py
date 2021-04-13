@@ -63,23 +63,23 @@ class Analysis:
 
         fig, axes = plt.subplots(2, 2, figsize=(16,12))
         axes = axes.flatten()
-        h = axes[0].hist(np.array(self.tree_data['Pi2MissMass2']), range=(-0.02, 0.02), **params)
+        h = axes[0].hist(np.array(self.tree_data['Pi2MissMass2']), range=(-1, 1), **params)
         axes[0].axvline(-self.cut_mm2, color='red')
         axes[0].axvline(self.cut_mm2, color='red')
         axes[0].set_ylabel('Events')
         axes[0].set_xlabel('Missing Mass ^2')
 
-        h = axes[1].hist(np.array(self.tree_data['Pi2MissE']), range=(-0.75, 0.75), **params)
+        h = axes[1].hist(np.array(self.tree_data['Pi2MissE']), range=(-2, 2), **params)
         axes[1].axvline(-self.cut_mE, color='red')
         axes[1].axvline(self.cut_mE, color='red')
         axes[1].set_xlabel('Missing Energy')
 
-        h = axes[2].hist(np.array(self.tree_data['Pi2MissP']), range=(-0.1, 0.6), **params)
+        h = axes[2].hist(np.array(self.tree_data['Pi2MissP']), range=(-1, 1), **params)
         axes[2].axvline(self.cut_mP, color='red')
         axes[2].set_xlabel('Missing Momentum')
 
 
-        h = axes[3].hist(np.array(self.tree_data['Pi2MissMassnP']), range=(0.75, 1.15), **params)
+        h = axes[3].hist(np.array(self.tree_data['Pi2MissMassnP']), range=(0, 2), **params)
         axes[3].set_xlabel('Missing Mass 2pi')
         axes[3].axvline(self.cut_mm2pi[0], color='red')
         axes[3].axvline(self.cut_mm2pi[1], color='red')
@@ -187,6 +187,8 @@ class Analysis:
             'linewidth': 2
         }
 
+        regions = [1000, 2000, 3000]
+
         if cuts:
             data = self.tree_data_cut
         else:
@@ -205,7 +207,8 @@ class Analysis:
         axes = ax.flatten()
         for i, valr in enumerate(vals):
             val, r, bins, xlab = valr
-            h = axes[i].hist(np.array(data[val]), range=r, bins=bins, **params)
+            for region in regions:
+                h = axes[i].hist(np.array(data[data['ProtonRegion']==region][val]), range=r, bins=bins, label=f"{region}", **params)
             axes[i].set_title(val)
             axes[i].set_ylabel('Events (per bin)')
             axes[i].set_xlabel(xlab)
