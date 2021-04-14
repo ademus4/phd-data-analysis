@@ -39,6 +39,7 @@ class FinalState(luigi.Task):
         yield BuildFinalState(self.config_file)
 
     def run(self):
+        ROOT.gROOT.ProcessLine(".x $CLAS12ROOT/RunRoot/LoadClas12Root.C");
         ROOT.gROOT.ProcessLine(".x $CHANSER/macros/Load.C")
         ROOT.gROOT.LoadMacro("$FINALSTATE/Pi2.cpp+")
         ROOT.gROOT.ProcessLine(".L $FINALSTATE/Run_Pi2.C")
@@ -64,15 +65,16 @@ class ApplyCuts(luigi.Task):
         # save in a seperate folder? output/skim3_******/filtered_data.root
         data_path = os.path.join(
             self.input()[0].path, 
-            'adamt/Pi2_config__/FinalState.root'
+            'adamt/Pi2_config__/particleData/ParticleVariables_0.root'
         )
-        data_tree = 'FINALOUTTREE'
+        data_tree = 'particle'
 
         df = ROOT.RDataFrame(data_tree, data_path)
-        df.Filter("-0.01 < Pi2MissMass2 < 0.01").Snapshot("FINALOUTTREE", self.output().path)
-        #  .Filter("-0.5 < Pi2MissE < 0.5") \
-        #  .Filter("Pi2MissP < 0.5") \
-        #  .Filter("0.8 < Pi2MissMassnP < 1.1") \
+        df.Filter("0.01 > Pi2MissMass2 > -0.01") \
+          .Filter("0.5 > Pi2MissE > -0.5") \
+          .Filter("Pi2MissP < 0.5") \
+          .Filter("0.8 < Pi2MissMassnP < 1.1") \
+          .Snapshot("withcuts", self.output().path)
           
 
 class MomentFitting(luigi.Task):
