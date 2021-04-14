@@ -133,9 +133,9 @@ class PlotMoments(luigi.Task):
         input_file = os.path.join(self.output_dir, 'moments', 'ParGraphsPi2MesonMass.root')
 
         with uproot3.open(input_file) as data:
-            fig, axes = plt.subplots(3, 3, figsize=(14, 12))
+            fig, axes = plt.subplots(4, 6, figsize=(30, 18))
             for i, ax in enumerate(axes.flatten()):
-                if i>7:
+                if i>21:
                     ax.set_axis_off()
                     continue
                 key = data.keys()[i]
