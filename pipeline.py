@@ -87,8 +87,8 @@ class MomentFitting(luigi.Task):
     def requires(self):
         yield ApplyCuts(input_file=self.data_file), ApplyCuts(input_file=self.sim_file)
 
-    def output(self):        
-        output_path = os.path.join(self.output_dir, 'moments')
+    def output(self):
+        output_path = os.path.join(self.output_dir, 'moments/')
         return luigi.LocalTarget(output_path)
 
     def run(self):
@@ -100,8 +100,7 @@ class MomentFitting(luigi.Task):
 
         data_path = self.input()[0][0].path
         sim_path = self.input()[0][1].path
-        data_tree = 'FINALOUTTREE'
-        #sim_data_tree = 'Filtered'
+        data_tree = 'withcuts'
 
         # load brufit root code
         ROOT.gROOT.ProcessLine(".x $BRUFIT/macros/LoadBru.C")
@@ -115,6 +114,45 @@ class MomentFitting(luigi.Task):
                       output_path,
                       int(self.nevents),
                       int(self.mcmc))
+
+
+class PlotMoments(luigi.Task):
+    data_file = luigi.Parameter()
+    sim_file = luigi.Parameter()
+    output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
+
+    def requires(self):
+        yield MomentFitting(data_file=self.data_file, sim_file=self.sim_file)
+
+    def output(self):
+        output_path = os.path.join(self.output_dir, 'moments', 'moments.png')
+        return luigi.LocalTarget(output_path)
+
+    def run(self):
+        # get input file path
+        input_file = os.path.join(self.output_dir, 'moments', 'ParGraphsPi2MesonMass.root')
+
+        with uproot3.open(input_file) as data:
+            fig, axes = plt.subplots(3, 3, figsize=(14, 12))
+            for i, ax in enumerate(axes.flatten()):
+                if i>7:
+                    ax.set_axis_off()
+                    continue
+                key = data.keys()[i]
+                d = data[key]
+                label = key.decode("utf-8").split(';')[0].split('_')
+                label[0] = "{}^{}".format(label[0][0], label[0][1])
+                label = "${}({}{})$".format(*label)
+                ax.errorbar(d.xvalues, d.yvalues, xerr=d.xerrors, yerr=d.yerrors, label=label)
+                ax.set_ylim([-0.75, 0.75])
+                ax.grid()
+                ax.legend()
+
+            fig.text(0.07, 0.5, "Moment mag", va='center', ha='center', rotation='vertical')
+            fig.text(0.5, 0.05, "$\pi^+\pi^-$ Mass [GeV/$c^2$]", va='center', ha='center', )
+
+            fig.savefig(self.output().path)
+        
 
 
 class Plotting(luigi.Task):
@@ -169,7 +207,7 @@ class BulkFinalState(luigi.WrapperTask):
 
 if __name__ == '__main__':
     luigi.build(
-        [Plotting()],
+        [PlotMoments()],
         workers=1, 
         local_scheduler=True
     )
