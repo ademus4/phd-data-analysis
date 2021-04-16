@@ -7,27 +7,29 @@
 
   //Save TreeDataPi2
   FS->UseOutputRootTree();
-
-  /////Make particle trees first in case want to add cut flags
-  ParticleDataManager pdm{"particle",1};
-  pdm.SetParticleOut(new CLAS12ParticleOutEvent0);
-  FS->RegisterPostKinAction(pdm);
-
+  
   //apply some general cuts
   ParticleCutsManager pcm{"DeltaTimeCuts",1};  //1==apply!
-  pcm.AddParticleCut("e-",    new DeltaTimeCut(1));
-  pcm.AddParticleCut("proton",new DeltaTimeCut(1));
-  pcm.AddParticleCut("pi+",   new DeltaTimeCut(1));
-  pcm.AddParticleCut("pi-",   new DeltaTimeCut(1));
+  pcm.AddParticleCut("e-",    new DeltaTimeVerCut(1));
+  pcm.AddParticleCut("proton",new DeltaTimeVerCut(1));
+  pcm.AddParticleCut("pi+",   new DeltaTimeVerCut(1));
+  pcm.AddParticleCut("pi-",   new DeltaTimeVerCut(1));
   FS->RegisterPostTopoAction(pcm);
+
+  ParticleCutsManager pcm2{"DeltaTimeCuts_05",0};  //1==apply!
+  pcm2.AddParticleCut("e-",    new DeltaTimeVerCut(0.5));
+  pcm2.AddParticleCut("proton",new DeltaTimeVerCut(0.5));
+  pcm2.AddParticleCut("pi+",   new DeltaTimeVerCut(0.5));
+  pcm2.AddParticleCut("pi-",   new DeltaTimeVerCut(0.5));
+  FS->RegisterPostTopoAction(pcm2);
 
   //for simulations, to correct for start time
   //FS->SetStartTimePeak(124.25);
   //FS->HalveBunchTime();
 
   //set start time
-  //StartTimeAction st("StartTime",new C12StartTimeFromParticle("Electron"));
-  StartTimeAction st("EBStartTime",new C12StartTimeFromVtFTB());
+  StartTimeAction st("StartTime",new C12StartTimeFromParticle("Electron"));  //better
+  //StartTimeAction st("EBStartTime",new C12StartTimeFromVtFTB());
   FS->RegisterPreTopoAction(st);
 
   //FT electron energy correction
@@ -36,7 +38,7 @@
   FS->RegisterPreTopoAction(pcorrm);
 
 
-  truth matching
+  //truth matching
   EventTruthAction etra("EventTruth");
   FS->RegisterPostKinAction(etra); //PostKin
 
