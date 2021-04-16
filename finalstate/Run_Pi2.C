@@ -2,8 +2,8 @@ int Run_Pi2(char * inputFilename,
 	    string config, 
 	    string outputDir){
 
-  //clas12databases::SetCCDBLocalConnection("/home/adam/dev/clas12root/RunRoot/ccdb.sqlite");
-  //clas12databases::SetRCDBRootConnection("/home/adam/dev/clas12root/RunRoot/rcdb.root");
+  clas12databases::SetCCDBLocalConnection("/home/adam/dev/clas12root/RunRoot/ccdb.sqlite");
+  clas12databases::SetRCDBRootConnection("/home/adam/dev/clas12root/RunRoot/rcdb.root");
   
   ////Set hipo file to be analysed
   HipoData hdata;
