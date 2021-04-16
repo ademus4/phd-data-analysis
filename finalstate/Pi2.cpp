@@ -50,6 +50,27 @@ namespace adamt{
       TD->MissEnPip     =misspip.E();
       TD->MissPnPip     =misspip.P();
 
+      TD->ElTh       =_electron.CLAS12()->getTheta();
+      TD->ElP        =_electron.CLAS12()->getP();
+      TD->ElTime     =_electron.CLAS12()->getTime();
+      TD->ElDE       =_electron.CLAS12()->getDeltaEnergy();
+      TD->ElRegion   =_electron.CLAS12()->getRegion();
+
+      TD->ProtTh     =_proton.CLAS12()->getTheta();
+      TD->ProtP      =_proton.CLAS12()->getP();
+      TD->ProtTime   =_proton.CLAS12()->getTime();
+      TD->ProtRegion =_proton.CLAS12()->getRegion();
+
+      TD->PipTh      =_pip.CLAS12()->getTheta();
+      TD->PipP       =_pip.CLAS12()->getP();
+      TD->PipTime    =_pip.CLAS12()->getTime();
+      TD->PipRegion  =_pip.CLAS12()->getRegion();
+
+      TD->PimTh      =_pim.CLAS12()->getTheta();
+      TD->PimP       =_pim.CLAS12()->getP();
+      TD->PimTime    =_pim.CLAS12()->getTime();
+      TD->PimRegion  =_pim.CLAS12()->getRegion();
+
       ///////------------------------------------///////
     };
     _doToTopo["Electron:Proton:Pip"]=[&](){
