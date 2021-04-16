@@ -49,6 +49,7 @@ class FinalState(luigi.Task):
 class ApplyCuts(luigi.Task):
     input_file = luigi.Parameter()
     output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
+    topo = luigi.Parameter(default=0)
 
     def output(self):
         _, fname = os.path.split(self.input_file)
@@ -65,17 +66,27 @@ class ApplyCuts(luigi.Task):
         # save in a seperate folder? output/skim3_******/filtered_data.root
         data_path = os.path.join(
             self.input()[0].path, 
-            'adamt/Pi2_config__/particleData/ParticleVariables_0.root'
+            'adamt/Pi2_config__/FinalState.root'  # finalstate
         )
-        data_tree = 'particle'
+        data_tree = 'FINALOUTTREE'
 
+
+        # load into dataframe ready for cuts
         df = ROOT.RDataFrame(data_tree, data_path)
-        df.Filter("0.01 > Pi2MissMass2 > -0.01") \
-          .Filter("0.5 > Pi2MissE > -0.5") \
-          .Filter("Pi2MissP < 0.5") \
-          .Filter("0.8 < Pi2MissMassnP < 1.1") \
-          .Snapshot("withcuts", self.output().path)
-          
+
+        # simulated data has extra truth matching column, add this cut
+        if "Truth" in df.GetColumnNames():
+            df = df.Filter("Truth == 1")
+        
+        # apply the various kinematic cuts
+        # define these in config file?
+        df = df.Filter("Topo == 0")
+        df = df.Filter("0.01 > Pi2MissMass2 > -0.01")
+        df = df.Filter("0.5 > Pi2MissE > -0.5")
+        df = df.Filter("Pi2MissP < 0.5")
+        df = df.Filter("0.8 < Pi2MissMassnP < 1.1")
+        df.Snapshot("withcuts", self.output().path)
+
 
 class MomentFitting(luigi.Task):
     data_file = luigi.Parameter()
@@ -170,14 +181,14 @@ class Plotting(luigi.Task):
     def run(self):
         file_path_data = os.path.join(
             self.input()[0][0].path, 
-            'adamt/Pi2_config__/particleData/ParticleVariables_0.root'
+            'adamt/Pi2_config__/FinalState.root'  # finalstate
         )
         file_path_cuts = self.input()[0][1].path
 
         # plot the raw data first
         output_dir = self.output().path
         A = Analysis(output_dir=output_dir)
-        A.load_data(file_path_data) # data_tree='FINALOUTTREE')
+        A.load_data(file_path_data, topo=0)
         A.plot_exc_cuts()
         A.plot_timing()
         A.plot_mesons()
@@ -189,7 +200,7 @@ class Plotting(luigi.Task):
         # plots the data with cuts applied
         output_dir = os.path.join(self.output().path, 'cuts')
         A = Analysis(output_dir=output_dir)
-        A.load_data(file_path_cuts) # data_tree='FINALOUTTREE')
+        A.load_data(file_path_cuts, topo=0)
         A.plot_mesons()
         A.plot_meson_2D()
         A.plot_meson_decay_angle()
@@ -207,7 +218,7 @@ class BulkFinalState(luigi.WrapperTask):
 
 if __name__ == '__main__':
     luigi.build(
-        [PlotMoments()],
+        [Plotting()],
         workers=1, 
         local_scheduler=True
     )
