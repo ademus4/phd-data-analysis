@@ -33,26 +33,32 @@ class Analysis:
         plt.rcParams['xtick.labelsize'] = 14
         plt.rcParams['ytick.labelsize'] = 14
 
-    def load_data(self, path):
+
+    def load_data(self, path, topo=None):
         print("Loading:")
         print(path)
         self.tree_data = uproot4.lazy(path, 
                                       executor=self.executor, 
                                       blocking=False, 
                                       cache=self.cache)
-        #self.apply_cuts()
+        
+        # check if topo given, careful with zero!
+        if topo is not None:
+            self.tree_data = self.tree_data[self.tree_data['Topo']==topo]
+
 
     def apply_cuts(self):
         cuts = (
             #np.array(self.tree_data['Pi2TriggerMesonex']==1) & 
             np.array(np.abs(self.tree_data['Pi2MissMass2'])<self.cut_mm2) &
             np.array(np.abs(self.tree_data['Pi2MissE'])<self.cut_mE) &
-            np.array(self.tree_data['Pi2MissP']<self.cut_mE) &
+            np.array(self.tree_data['Pi2MissP']<self.cut_mP) &
             np.array(
                 (self.cut_mm2pi[0]<self.tree_data['Pi2MissMassnP']) & 
                 (self.tree_data['Pi2MissMassnP']<self.cut_mm2pi[1]))
         )
         self.tree_data_cut = self.tree_data[cuts]
+
 
     def plot_exc_cuts(self):
         params = {
@@ -63,7 +69,7 @@ class Analysis:
 
         fig, axes = plt.subplots(2, 2, figsize=(16,12))
         axes = axes.flatten()
-        h = axes[0].hist(np.array(self.tree_data['Pi2MissMass2']), range=(-1, 1), **params)
+        h = axes[0].hist(np.array(self.tree_data['Pi2MissMass2']), range=(-0.5, 0.5), **params)
         axes[0].axvline(-self.cut_mm2, color='red')
         axes[0].axvline(self.cut_mm2, color='red')
         axes[0].set_ylabel('Events')
@@ -86,12 +92,13 @@ class Analysis:
         plt.tight_layout()
         fig.savefig(os.path.join(self.output_dir, 'exclusivity_cuts.png'))
 
+
     def plot_timing(self, xrange=(-0.5, 0.5)):
         vals = [
-            "ElectronDeltaTime",
-            "ProtonDeltaTime",
-            "PimDeltaTime",
-            "PipDeltaTime"
+            "Pi2ElTime",
+            "Pi2ProtTime",
+            "Pi2PipTime",
+            "Pi2PimTime"
         ]
 
         params = {
@@ -109,6 +116,7 @@ class Analysis:
         ax.set_xlabel('Time [ns]')
         plt.tight_layout()
         fig.savefig(os.path.join(self.output_dir, 'timing_plots.png'))
+
 
     def plot_mesons(self, cuts=False):
         params = {
@@ -157,19 +165,21 @@ class Analysis:
             data = self.tree_data
 
         vals = [
-            ["ElectronP",      (0, 7), 201, 'Momentum [GeV/c]'],
-            ["ElectronTheta",  (1, 7), 201, '$\\theta$ [deg]'],
-            ["ElectronPhi",    (-180, 180), 201, '$\phi$ [deg]'],
-            ["ElectronDeltaE", (0, 30), 201, 'Energy [MeV?]'],
-            ["ElectronRegion", (0, 5000), 21, 'Region'],
-            ["ElectronSector", (0, 8), 8, 'Sector']
+            ["Pi2ElP",      (0, 7), 201,   'Momentum [GeV/c]'],
+            ["Pi2ElTh",     (1, 7), 201,   '$\\theta$ [deg]'],
+            ["Pi2ElDE",     (0, 30), 201,  'Delta Energy [MeV?]'],
+            ["Pi2ElRegion", (0, 5000), 21, 'Region'],
         ]
 
         fig, ax = plt.subplots(2, 3, figsize=(16, 10))
         axes = ax.flatten()
         for i, valr in enumerate(vals):
             val, r, bins, xlab = valr
-            h = axes[i].hist(np.array(data[val]), range=r, bins=bins, **params)
+            if val[-2:] == 'Th':
+                norm = 180/np.pi
+            else:
+                norm = 1
+            h = axes[i].hist(np.array(data[val])*norm, range=r, bins=bins, **params)
             axes[i].set_title(val)
             axes[i].set_ylabel('Events (per bin)')
             axes[i].set_xlabel(xlab)
@@ -179,7 +189,6 @@ class Analysis:
             filename = 'cut_' + filename
         plt.tight_layout()
         fig.savefig(os.path.join(self.output_dir, filename))
-
 
     def plot_proton(self, cuts=False):
         params = {
@@ -195,20 +204,23 @@ class Analysis:
             data = self.tree_data
 
         vals = [
-            ["ProtonP",      (0, 7), 201, 'Momentum [GeV/c]'],
-            ["ProtonTheta",  (0, 110), 201, '$\\theta$ [deg]'],
-            ["ProtonPhi",    (-180, 180), 201, '$\phi$ [deg]'],
-            ["ProtonDeltaE", (0, 70), 201, 'Energy [MeV?]'],
-            ["ProtonRegion", (0, 5000), 21, 'Region'],
-            ["ProtonSector", (0, 8), 8, 'Sector']
+            ["Pi2ProtP",      (0, 7), 201, 'Momentum [GeV/c]'],
+            ["Pi2ProtTh",  (0, 110), 201, '$\\theta$ [deg]'],
+            ["Pi2ProtRegion", (0, 5000), 21, 'Region'],
         ]
 
-        fig, ax = plt.subplots(2, 3, figsize=(16, 10))
+        fig, ax = plt.subplots(1, 3, figsize=(16, 5))
         axes = ax.flatten()
         for i, valr in enumerate(vals):
             val, r, bins, xlab = valr
+            if val[-2:] == 'Th':
+                norm = 180/np.pi
+            else:
+                norm = 1
             for region in regions:
-                h = axes[i].hist(np.array(data[data['ProtonRegion']==region][val]), range=r, bins=bins, label=f"{region}", **params)
+                h = axes[i].hist(
+                    np.array(data[data['Pi2ProtRegion']==region][val])*norm, 
+                    range=r, bins=bins, label=f"{region}", **params)
             axes[i].set_title(val)
             axes[i].set_ylabel('Events (per bin)')
             axes[i].set_xlabel(xlab)
@@ -234,20 +246,23 @@ class Analysis:
             data = self.tree_data
 
         vals = [
-            ["PipP",      (0, 7), 201, 'Momentum [GeV/c]'],
-            ["PipTheta",  (0, 110), 201, '$\\theta$ [deg]'],
-            ["PipPhi",    (-180, 180), 201, '$\phi$ [deg]'],
-            ["PipDeltaE", (0, 70), 201, 'Energy [MeV?]'],
-            ["PipRegion", (0, 5000), 21, 'Region'],
-            ["PipSector", (0, 8), 8, 'Sector']
+            ["Pi2PipP",      (0, 7), 201,      'Momentum [GeV/c]'],
+            ["Pi2PipTh",     (0, 110), 201,    '$\\theta$ [deg]'],
+            ["Pi2PipRegion", (0, 5000), 21,    'Region'],
         ]
 
-        fig, ax = plt.subplots(2, 3, figsize=(16, 10))
+        fig, ax = plt.subplots(1, 3, figsize=(16, 5))
         axes = ax.flatten()
         for i, valr in enumerate(vals):
             val, r, bins, xlab = valr
+            if val[-2:] == 'Th':
+                norm = 180/np.pi
+            else:
+                norm = 1
             for region in regions:
-                h = axes[i].hist(np.array(data[data['PipRegion']==region][val]), range=r, bins=bins, label=f"{region}", **params)
+                h = axes[i].hist(
+                    np.array(data[data['Pi2PipRegion']==region][val])*norm, 
+                    range=r, bins=bins, label=f"{region}", **params)
             axes[i].set_title(val)
             axes[i].set_ylabel('Events (per bin)')
             axes[i].set_xlabel(xlab)
@@ -274,20 +289,23 @@ class Analysis:
             data = self.tree_data
 
         vals = [
-            ["PimP",      (0, 7), 201, 'Momentum [GeV/c]'],
-            ["PimTheta",  (0, 80), 201, '$\\theta$ [deg]'],
-            ["PimPhi",    (-180, 180), 201, '$\phi$ [deg]'],
-            ["PimDeltaE", (0, 40), 201, 'Energy [MeV?]'],
-            ["PimRegion", (0, 5000), 21, 'Region'],
-            ["PimSector", (0, 7), 7, 'Sector']
+            ["Pi2PimP",      (0, 7), 201,   'Momentum [GeV/c]'],
+            ["Pi2PimTh",     (0, 80), 201,  '$\\theta$ [deg]'],
+            ["Pi2PimRegion", (0, 5000), 21, 'Region'],
         ]
 
-        fig, ax = plt.subplots(2, 3, figsize=(16, 10))
+        fig, ax = plt.subplots(1, 3, figsize=(16, 5))
         axes = ax.flatten()
         for i, valr in enumerate(vals):
             val, r, bins, xlab = valr
+            if val[-2:] == 'Th':
+                norm = 180/np.pi
+            else:
+                norm = 1
             for region in regions:
-                h = axes[i].hist(np.array(data[data['PimRegion']==region][val]), range=r, bins=bins, label=f"{region}", **params)
+                h = axes[i].hist(
+                    np.array(data[data['Pi2PimRegion']==region][val])*norm, 
+                    range=r, bins=bins, label=f"{region}", **params)
             axes[i].set_title(val)
             axes[i].set_ylabel('Events (per bin)')
             axes[i].set_xlabel(xlab)
@@ -360,7 +378,10 @@ class Analysis:
             'size': 12,
         }
 
-        fig, axes = plt.subplots(3, 3, figsize=(12, 10), sharex=True, sharey=True, gridspec_kw={'hspace': 0, 'wspace': 0})
+        fig, axes = plt.subplots(3, 3, 
+                                 figsize=(12, 10), 
+                                 sharex=True, sharey=True, 
+                                 gridspec_kw={'hspace': 0, 'wspace': 0})
         for i, ax in enumerate(axes.flatten()):
             if i>=len(mbins):
                 ax.remove()
