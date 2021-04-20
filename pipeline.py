@@ -143,8 +143,14 @@ class MergeMoments(luigi.Task):
     def run(self):
         files = glob(os.path.join(self.input()[0].path, "**", "ResultsHS*.root"))
 
+        # values related to moments fitting
+        POL = 2
+        L = 3
+        M = 2
+
         # iterate over output files, load into dataframe, combine together
         dfs = []
+        output = []
         for item in files:
             with uproot3.open(item) as data:
 
@@ -152,16 +158,35 @@ class MergeMoments(luigi.Task):
                 path, _ = os.path.split(item)
                 bin = float(path.split('/')[-1].replace('_', '').replace('Pi2MesonMass', ''))
 
-                # get moments values out of root file
-                df = data['ResultTree'].pandas.df("H*")
-                df['bin'] = bin
+                # use the results tree, same for both mcmc and minuit
+                tree = data['ResultTree']
 
-                # append to list of data to merge
-                dfs.append(df)
+                # extract values from results tree
+                for p in range(POL+1):
+                    for l in range(L+1):
+                        for m in range(M+1):
+                            label = f"H{p}_{l}_{m}"
+                            try:
+                                val = tree[label].array()[0]
+                                err = tree[label+'_err'].array()[0]
+                            except KeyError:
+                                # some combinations we can skip
+                                continue
 
-        output = pd.concat(dfs, ignore_index=True)
-        output.set_index('bin', inplace=True)
-        output.to_csv(self.output().path)
+                            result = {
+                                'val': val,
+                                'err': err,
+                                'p': p,
+                                'l': l,
+                                'm': m,
+                                'bin': bin,
+                                'label': label
+                            }
+                            output.append(result)
+
+        # save output
+        df = pd.DataFrame.from_dict(output)
+        df.to_csv(self.output().path)
 
 
 class PlotMoments(luigi.Task):
@@ -170,7 +195,7 @@ class PlotMoments(luigi.Task):
     output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
 
     def requires(self):
-        yield MomentFitting(data_file=self.data_file, sim_file=self.sim_file)
+        yield MergeMoments(data_file=self.data_file, sim_file=self.sim_file)
 
     def output(self):
         output_path = os.path.join(self.output_dir, 'moments', 'moments.png')
@@ -255,7 +280,7 @@ class BulkFinalState(luigi.WrapperTask):
 
 if __name__ == '__main__':
     luigi.build(
-        [MergeMoments()],
+        [PlotMoments()],
         workers=1, 
         local_scheduler=True
     )
