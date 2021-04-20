@@ -186,7 +186,7 @@ class MergeMoments(luigi.Task):
 
         # save output
         df = pd.DataFrame.from_dict(output)
-        df.to_csv(self.output().path)
+        df.to_csv(self.output().path, index=False)
 
 
 class PlotMoments(luigi.Task):
@@ -203,29 +203,27 @@ class PlotMoments(luigi.Task):
 
     def run(self):
         # get input file path
-        input_file = os.path.join(self.output_dir, 'moments', 'ParGraphsPi2MesonMass.root')
+        input_file = self.input()[0].path
 
-        with uproot3.open(input_file) as data:
-            fig, axes = plt.subplots(4, 6, figsize=(30, 18))
-            for i, ax in enumerate(axes.flatten()):
-                if i>21:
-                    ax.set_axis_off()
-                    continue
-                key = data.keys()[i]
-                d = data[key]
-                label = key.decode("utf-8").split(';')[0].split('_')
-                label[0] = "{}^{}".format(label[0][0], label[0][1])
-                label = "${}({}{})$".format(*label)
-                ax.errorbar(d.xvalues, d.yvalues, xerr=d.xerrors, yerr=d.yerrors, label=label)
-                ax.set_ylim([-0.75, 0.75])
-                ax.grid()
-                ax.legend()
+        df = pd.read_csv(input_file)
+        labels = df['label'].unique()
 
-            fig.text(0.07, 0.5, "Moment mag", va='center', ha='center', rotation='vertical')
-            fig.text(0.5, 0.05, "$\pi^+\pi^-$ Mass [GeV/$c^2$]", va='center', ha='center', )
+        fig, axes = plt.subplots(4, 6, figsize=(30, 18))
+        for i, ax in enumerate(axes.flatten()):
+            if i>21:
+                ax.set_axis_off()
+                continue
+            label = labels[i]
+            data = df[df['label']==label].sort_values('bin')
+            ax.errorbar(data['bin'], data['val'], xerr=None, yerr=data['err'], label=label)
+            ax.set_ylim([-0.75, 0.75])
+            ax.grid()
+            ax.legend()
 
-            fig.savefig(self.output().path)
-        
+        fig.text(0.07, 0.5, "Moment mag", va='center', ha='center', rotation='vertical')
+        fig.text(0.5, 0.05, "$\pi^+\pi^-$ Mass [GeV/$c^2$]", va='center', ha='center', )
+
+        fig.savefig(self.output().path)
 
 
 class Plotting(luigi.Task):
