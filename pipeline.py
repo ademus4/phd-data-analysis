@@ -3,6 +3,7 @@ import luigi
 import ROOT
 import matplotlib.pylab as plt
 import numpy as np
+import pandas as pd
 import uproot3
 import uproot4
 from concurrent.futures import ThreadPoolExecutor
@@ -127,6 +128,42 @@ class MomentFitting(luigi.Task):
                       int(self.mcmc))
 
 
+class MergeMoments(luigi.Task):
+    data_file = luigi.Parameter()
+    sim_file = luigi.Parameter()
+    output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
+
+    def requires(self):
+        yield MomentFitting(data_file=self.data_file, sim_file=self.sim_file)
+
+    def output(self):
+        output_path = os.path.join(self.output_dir, 'moments', 'moments_merged.csv')
+        return luigi.LocalTarget(output_path)
+
+    def run(self):
+        files = glob(os.path.join(self.input()[0].path, "**", "ResultsHS*.root"))
+
+        # iterate over output files, load into dataframe, combine together
+        dfs = []
+        for item in files:
+            with uproot3.open(item) as data:
+
+                # get bin name from path 
+                path, _ = os.path.split(item)
+                bin = float(path.split('/')[-1].replace('_', '').replace('Pi2MesonMass', ''))
+
+                # get moments values out of root file
+                df = data['ResultTree'].pandas.df("H*")
+                df['bin'] = bin
+
+                # append to list of data to merge
+                dfs.append(df)
+
+        output = pd.concat(dfs, ignore_index=True)
+        output.set_index('bin', inplace=True)
+        output.to_csv(self.output().path)
+
+
 class PlotMoments(luigi.Task):
     data_file = luigi.Parameter()
     sim_file = luigi.Parameter()
@@ -218,7 +255,7 @@ class BulkFinalState(luigi.WrapperTask):
 
 if __name__ == '__main__':
     luigi.build(
-        [Plotting()],
+        [MergeMoments()],
         workers=1, 
         local_scheduler=True
     )
