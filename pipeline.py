@@ -144,39 +144,31 @@ class Plotting(luigi.Task):
 class MomentFitting(luigi.Task):
     # check for folders, not for tasks
     data_file = luigi.Parameter()
+    data_tree = luigi.Parameter(default='withcuts')
     sim_file = luigi.Parameter()
+    sim_tree = luigi.Parameter(default='withcuts')
     nevents = luigi.Parameter()    
     mcmc = luigi.Parameter()
-    output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
-
-    def requires(self):
-        # remove this
-        yield ApplyCuts(input_file=self.data_file), ApplyCuts(input_file=self.sim_file)
+    output_dir = luigi.Parameter(default=DefaultParams().output_dir)
 
     def output(self):
         output_path = os.path.join(self.output_dir, 'moments/')
         return luigi.LocalTarget(output_path)
 
     def run(self):
-        # save input conditions as txt file inside output folder?
-
         # make the output folder
         output_path = self.output().path
         os.mkdir(self.output().path)
-
-        data_path = self.input()[0][0].path
-        sim_path = self.input()[0][1].path
-        data_tree = 'withcuts'
 
         # load brufit root code
         ROOT.gROOT.ProcessLine(".x $BRUFIT/macros/LoadBru.C")
         ROOT.gROOT.ProcessLine(".L $MOMENTs/pshm_fit.C")
 
         # run the processing
-        ROOT.pshm_fit(data_path,
-                      data_tree,
-                      sim_path,
-                      data_tree,
+        ROOT.pshm_fit(self.data_file,
+                      self.data_tree,
+                      self.sim_file,
+                      self.sim_tree,
                       output_path,
                       int(self.nevents),
                       int(self.mcmc))
