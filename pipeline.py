@@ -32,10 +32,13 @@ class BuildFinalState(ExternalProgramTask):
         return luigi.LocalTarget(self.config_file)
 
 
-class FinalState(luigi.Task):
+class FinalState(ExternalPythonProgramTask):
     input_file = luigi.Parameter()
     output_dir = luigi.Parameter(default=DefaultParams().output_dir)
     config_file = luigi.Parameter(default=DefaultParams().config_file)
+    
+    def requires(self):
+        yield BuildFinalState(self.config_file)
 
     def output(self):
         _, fname = os.path.split(self.input_file)
@@ -43,16 +46,15 @@ class FinalState(luigi.Task):
         output_path = os.path.join(self.output_dir, folder)
         return luigi.LocalTarget(output_path)
 
-    def requires(self):
-        yield BuildFinalState(self.config_file)
+    def program_args(self):
+        command = [
+            'python', 'finalstate/run_pi2.py',
+            '-i', self.input_file,
+            '-o', self.output().path,
+            '-c', self.config_file
+        ]
+        return command
 
-    def run(self):
-        ROOT.gROOT.ProcessLine(".x $CLAS12ROOT/RunRoot/LoadClas12Root.C");
-        ROOT.gROOT.ProcessLine(".x $CHANSER/macros/Load.C")
-        ROOT.gROOT.LoadMacro("$FINALSTATE/Pi2.cpp+")
-        ROOT.gROOT.ProcessLine(".L $FINALSTATE/Run_Pi2.C")
-        ROOT.Run_Pi2(self.input_file, self.config_file, self.output().path)
-        
 
 class ApplyCuts(luigi.Task):
     input_file = luigi.Parameter()
