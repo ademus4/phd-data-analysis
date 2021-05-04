@@ -291,10 +291,7 @@ class MCMCMomentsPlotsPerBin(luigi.Task):
         L = 3
         M = 2
 
-        # iterate over output files, load into dataframe, combine together
-        dfs = []
         yields = []
-
         with uproot3.open(self.input_file) as data:
 
             # get bin name from path 
@@ -306,14 +303,12 @@ class MCMCMomentsPlotsPerBin(luigi.Task):
             os.makedirs(self.output().path)
 
             # use mcmctree for raw info on fit
-            tree_name = 'MCMCTree'
-            tree = data[tree_name]
+            tree = data['MCMCTree']
 
             yields.append({
                 'bin': bin,
                 'yield': tree['Yld_Moments'].array()
             })
-
             values = []
             labels = []
 
