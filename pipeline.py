@@ -292,6 +292,8 @@ class MCMCMomentsPlotsPerBin(luigi.Task):
         M = 2
 
         yields = []
+        values = []
+        labels = []
         with uproot3.open(self.input_file) as data:
 
             # get bin name from path 
@@ -309,8 +311,7 @@ class MCMCMomentsPlotsPerBin(luigi.Task):
                 'bin': bin,
                 'yield': tree['Yld_Moments'].array()
             })
-            values = []
-            labels = []
+
 
             # extract values from mcmc tree
             for p in range(POL+1):
@@ -326,36 +327,36 @@ class MCMCMomentsPlotsPerBin(luigi.Task):
                         values.append(vals)
                         labels.append(label)
 
-            # corner plot
-            fig = corner.corner(
-                np.array(values).T, 
-                labels=labels,
-                quantiles=[0.16, 0.5, 0.84],
-                show_titles=True, title_kwargs={"fontsize": 12})
+        # corner plot
+        fig = corner.corner(
+            np.array(values).T, 
+            labels=labels,
+            quantiles=[0.16, 0.5, 0.84],
+            show_titles=True, title_kwargs={"fontsize": 12})
 
-            filename = os.path.join(self.output().path, 'corner_plot.png')
-            fig.savefig(filename)
-            fig.clear()
-            plt.close(fig)
+        filename = os.path.join(self.output().path, 'corner_plot.png')
+        fig.savefig(filename)
+        fig.clear()
+        plt.close(fig)
 
-            # plot the timelines
-            N = len(labels)
-            fig, axes = plt.subplots(int(N/4)+1, 4, figsize=(20, 20))
-            axes = axes.flatten()
-            i = 0
-            for label, vals in zip(labels, values):            
-                ax = axes[i]
-                if i>=N:
-                    ax.remove()
-                    continue
-                ax.plot(vals, label=label)
-                ax.legend()
-                ax.set_xlabel('events')
-                ax.grid()
-                i += 1
-            
-            filename = os.path.join(self.output().path, 'timeline_plots.png')
-            plt.tight_layout()
-            fig.savefig(filename)
-            fig.clear()
-            plt.close(fig)
+        # plot the timelines
+        N = len(labels)
+        fig, axes = plt.subplots(int(N/4)+1, 4, figsize=(20, 20))
+        axes = axes.flatten()
+        i = 0
+        for label, vals in zip(labels, values):            
+            ax = axes[i]
+            if i>=N:
+                ax.remove()
+                continue
+            ax.plot(vals, label=label)
+            ax.legend()
+            ax.set_xlabel('events')
+            ax.grid()
+            i += 1
+        
+        filename = os.path.join(self.output().path, 'timeline_plots.png')
+        plt.tight_layout()
+        fig.savefig(filename)
+        fig.clear()
+        plt.close(fig)
