@@ -39,6 +39,15 @@ class AnalyseMoments(luigi.WrapperTask):
         yield
 
 
+class MCMCPlotsBins(luigi.WrapperTask):
+    input_dir = luigi.Parameter()
+
+    def requires(self):
+        files = glob(os.path.join(self.input_dir, "**", "ResultsHS*.root"))
+        for item in files:
+            yield pipeline.MCMCMomentsPlotsPerBin(input_file=item)
+
+
 if __name__ == '__main__':
     luigi.build(
         [ProcessData()],

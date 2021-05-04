@@ -1,3 +1,4 @@
+import corner
 import os
 import luigi
 import ROOT
@@ -270,3 +271,96 @@ class PlotMoments(luigi.Task):
         fig.text(0.5, 0.05, "$\pi^+\pi^-$ Mass [GeV/$c^2$]", va='center', ha='center', )
 
         fig.savefig(self.output().path)
+
+
+class MCMCMomentsPlotsPerBin(luigi.Task):
+    input_file = luigi.Parameter()
+    output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
+
+    def output(self):
+        # folder for the individual bin
+        path, _ = os.path.split(self.input_file)
+        bin = float(path.split('/')[-1].replace('_', '').replace('Pi2MesonMass', ''))
+        output_path = os.path.join(self.output_dir, 'moments', 'plots', f'bin_{bin}')
+        return luigi.LocalTarget(output_path)
+
+    def run(self):
+
+        # values related to moments fitting
+        POL = 2
+        L = 3
+        M = 2
+
+        # iterate over output files, load into dataframe, combine together
+        dfs = []
+        yields = []
+
+        with uproot3.open(self.input_file) as data:
+
+            # get bin name from path 
+            path, _ = os.path.split(self.input_file)
+            bin = float(path.split('/')[-1].replace('_', '').replace('Pi2MesonMass', ''))
+            print(f'Corner plots for bin {bin}')
+
+            # make folder for plots
+            os.makedirs(self.output().path)
+
+            # use mcmctree for raw info on fit
+            tree_name = 'MCMCTree'
+            tree = data[tree_name]
+
+            yields.append({
+                'bin': bin,
+                'yield': tree['Yld_Moments'].array()
+            })
+
+            values = []
+            labels = []
+
+            # extract values from mcmc tree
+            for p in range(POL+1):
+                for l in range(L+1):
+                    for m in range(M+1):
+                        label = f"H{p}_{l}_{m}"
+                        try:
+                            vals = tree[label].array()
+                        except KeyError:
+                            # some combinations we can skip
+                            continue
+                        
+                        values.append(vals)
+                        labels.append(label)
+
+            # corner plot
+            fig = corner.corner(
+                np.array(values).T, 
+                labels=labels,
+                quantiles=[0.16, 0.5, 0.84],
+                show_titles=True, title_kwargs={"fontsize": 12})
+
+            filename = os.path.join(self.output().path, 'corner_plot.png')
+            fig.savefig(filename)
+            fig.clear()
+            plt.close(fig)
+
+            # plot the timelines
+            N = len(labels)
+            fig, axes = plt.subplots(int(N/4)+1, 4, figsize=(20, 20))
+            axes = axes.flatten()
+            i = 0
+            for label, vals in zip(labels, values):            
+                ax = axes[i]
+                if i>=N:
+                    ax.remove()
+                    continue
+                ax.plot(vals, label=label)
+                ax.legend()
+                ax.set_xlabel('events')
+                ax.grid()
+                i += 1
+            
+            filename = os.path.join(self.output().path, 'timeline_plots.png')
+            plt.tight_layout()
+            fig.savefig(filename)
+            fig.clear()
+            plt.close(fig)
