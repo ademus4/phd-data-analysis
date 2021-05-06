@@ -148,8 +148,11 @@ class MomentFitting(luigi.Task):
     data_tree = luigi.Parameter(default='withcuts')
     sim_file = luigi.Parameter()
     sim_tree = luigi.Parameter(default='withcuts')
-    nevents = luigi.Parameter()    
-    mcmc = luigi.Parameter()
+    bins = luigi.IntParameter()
+    bmin = luigi.FloatParameter()
+    bmax = luigi.FloatParameter()
+    nevents = luigi.IntParameter()    
+    mcmc = luigi.IntParameter()
     output_dir = luigi.Parameter(default=DefaultParams().output_dir)
 
     def output(self):
@@ -171,14 +174,17 @@ class MomentFitting(luigi.Task):
                       self.sim_file,
                       self.sim_tree,
                       output_path,
-                      int(self.nevents),
-                      int(self.mcmc))
+                      self.bins,
+                      self.bmin,
+                      self.bmax,
+                      self.nevents,
+                      self.mcmc)
 
 
 class MergeMoments(luigi.Task):
     data_file = luigi.Parameter()
     sim_file = luigi.Parameter()
-    output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
+    output_dir = luigi.Parameter(default=DefaultParams().output_dir)
 
     def requires(self):
         yield MomentFitting(data_file=self.data_file, sim_file=self.sim_file)
@@ -239,7 +245,7 @@ class MergeMoments(luigi.Task):
 class PlotMoments(luigi.Task):
     data_file = luigi.Parameter()
     sim_file = luigi.Parameter()
-    output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
+    output_dir = luigi.Parameter(default=DefaultParams().output_dir)
 
     def requires(self):
         yield MergeMoments(data_file=self.data_file, sim_file=self.sim_file)
@@ -262,7 +268,7 @@ class PlotMoments(luigi.Task):
                 continue
             label = labels[i]
             data = df[df['label']==label].sort_values('bin')
-            ax.errorbar(data['bin'], data['val'], xerr=None, yerr=data['err'], label=label)
+            ax.errorbar(data['bin'], data['val'], xerr=None, yerr=data['err'], label=label, marker='o', linestyle='dashed')
             ax.set_ylim([-0.75, 0.75])
             ax.grid()
             ax.legend()
