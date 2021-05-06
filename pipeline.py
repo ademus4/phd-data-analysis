@@ -276,7 +276,7 @@ class PlotMoments(luigi.Task):
 class MCMCMomentsPlotsPerBin(luigi.Task):
     input_file = luigi.Parameter()
     burnin = luigi.Parameter(default=5000)
-    output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
+    output_dir = luigi.Parameter(default=DefaultParams().output_dir)
 
     def output(self):
         # folder for the individual bin
