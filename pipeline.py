@@ -275,6 +275,7 @@ class PlotMoments(luigi.Task):
 
 class MCMCMomentsPlotsPerBin(luigi.Task):
     input_file = luigi.Parameter()
+    burnin = luigi.Parameter(default=5000)
     output_dir = luigi.Parameter(default=os.getenv('LUIGI_WORK_DIR'))
 
     def output(self):
@@ -335,6 +336,18 @@ class MCMCMomentsPlotsPerBin(luigi.Task):
             show_titles=True, title_kwargs={"fontsize": 12})
 
         filename = os.path.join(self.output().path, 'corner_plot.png')
+        fig.savefig(filename)
+        fig.clear()
+        plt.close(fig)
+
+        # another corner plot after burn in
+        fig = corner.corner(
+            np.array(values).T[self.burnin:], 
+            labels=labels,
+            quantiles=[0.16, 0.5, 0.84],
+            show_titles=True, title_kwargs={"fontsize": 12})
+
+        filename = os.path.join(self.output().path, 'corner_plot_burnin.png')
         fig.savefig(filename)
         fig.clear()
         plt.close(fig)
