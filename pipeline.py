@@ -21,6 +21,9 @@ class DefaultParams(luigi.Config):
     config_file = luigi.Parameter()
     output_dir = luigi.Parameter()
     topo = luigi.Parameter()
+    POL = luigi.IntParameter()
+    L = luigi.IntParameter()
+    M = luigi.IntParameter()
 
 
 class BuildFinalState(ExternalProgramTask):
@@ -91,11 +94,12 @@ class ApplyCuts(luigi.Task):
         
         # apply the various kinematic cuts
         # define these in config file?
-        df = df.Filter("Topo == 0")
-        df = df.Filter("0.01 > Pi2MissMass2 > -0.01")
-        df = df.Filter("0.5 > Pi2MissE > -0.5")
-        df = df.Filter("Pi2MissP < 0.5")
-        df = df.Filter("0.8 < Pi2MissMassnP < 1.1")
+        df = df.Filter("Topo == 0") \
+            .Filter("Pi2MissMass2 > -0.01").Filter("Pi2MissMass2 < 0.01") \
+            .Filter("Pi2MissE > -0.5").Filter("Pi2MissE < 0.5") \
+            .Filter("Pi2MissP < 0.5") \
+            .Filter("Pi2MissMassnP > 0.8").Filter("Pi2MissMassnP < 1.1") \
+            .Filter("Pi2ElP > 0.5").Filter("Pi2ElP < 4.5")
         df.Snapshot("withcuts", self.output().path)
 
 
@@ -142,17 +146,46 @@ class Plotting(luigi.Task):
         A.plot_meson_decay_angle()
 
 
+class PlotFile(luigi.Task):
+    input_file = luigi.Parameter()
+    output_dir = luigi.Parameter(default=DefaultParams().output_dir)
+
+    def output(self):
+        filepath, filename = os.path.split(self.input_file)
+        output_path = os.path.join(filepath, filename.split('.')[0])
+        return luigi.LocalTarget(output_path)
+
+    def run(self):
+
+        # plots
+        output_dir = self.output().path
+        A = Analysis(output_dir=output_dir)
+        A.load_data(self.input_file, topo=0)
+        A.plot_exc_cuts()
+        A.plot_timing()
+        A.plot_mesons()
+        A.plot_electron()
+        A.plot_proton()
+        A.plot_pip()
+        A.plot_pim()
+        A.plot_meson_2D()
+        A.plot_meson_decay_angle()
+
+
 class MomentFitting(luigi.Task):
     # check for folders, not for tasks
     data_file = luigi.Parameter()
-    data_tree = luigi.Parameter(default='withcuts')
+    data_tree = luigi.Parameter()
     sim_file = luigi.Parameter()
-    sim_tree = luigi.Parameter(default='withcuts')
+    sim_tree = luigi.Parameter()
     bins = luigi.IntParameter()
     bmin = luigi.FloatParameter()
     bmax = luigi.FloatParameter()
     nevents = luigi.IntParameter()    
     mcmc = luigi.IntParameter()
+    L = luigi.IntParameter(default=DefaultParams().L)
+    M = luigi.IntParameter(default=DefaultParams().M)
+    nCores = luigi.IntParameter()
     output_dir = luigi.Parameter(default=DefaultParams().output_dir)
 
     def output(self):
@@ -168,23 +201,33 @@ class MomentFitting(luigi.Task):
         ROOT.gROOT.ProcessLine(".x $BRUFIT/macros/LoadBru.C")
         ROOT.gROOT.ProcessLine(".L $MOMENTs/pshm_fit.C")
 
+        params = {
+            "data_path": self.data_file,
+            "data_tree": self.data_tree,
+            "sim_data_path": self.sim_file,
+            "sim_data_tree": self.sim_tree,
+            "output_path": output_path,
+            "bins": self.bins,
+            "bmin": self.bmin,
+            "bmax": self.bmax,
+            "nEvents": self.nevents,
+            "mcmc": self.mcmc,
+            "L": self.L,
+            "M": self.M,
+            "nCores": self.nCores
+        }
+
         # run the processing
-        ROOT.pshm_fit(self.data_file,
-                      self.data_tree,
-                      self.sim_file,
-                      self.sim_tree,
-                      output_path,
-                      self.bins,
-                      self.bmin,
-                      self.bmax,
-                      self.nevents,
-                      self.mcmc)
+        ROOT.pshm_fit(**params)
 
 
 class MergeMoments(luigi.Task):
     data_file = luigi.Parameter()
     sim_file = luigi.Parameter()
     output_dir = luigi.Parameter(default=DefaultParams().output_dir)
+    POL = luigi.Parameter(default=DefaultParams().POL)
+    L = luigi.Parameter(default=DefaultParams().L)
+    M = luigi.Parameter(default=DefaultParams().M)
 
     def requires(self):
         yield MomentFitting(data_file=self.data_file, sim_file=self.sim_file)
@@ -197,9 +240,9 @@ class MergeMoments(luigi.Task):
         files = glob(os.path.join(self.input()[0].path, "**", "ResultsHS*.root"))
 
         # values related to moments fitting
-        POL = 2
-        L = 3
-        M = 2
+        POL = self.POL
+        L = self.L
+        M = self.M
 
         # iterate over output files, load into dataframe, combine together
         dfs = []
@@ -268,7 +311,7 @@ class PlotMoments(luigi.Task):
                 continue
             label = labels[i]
             data = df[df['label']==label].sort_values('bin')
-            ax.errorbar(data['bin'], data['val'], xerr=None, yerr=data['err'], label=label, marker='o', linestyle='dashed')
+            ax.errorbar(data['bin'], data['val'], xerr=None, yerr=data['err'], label=label, marker='.', ls='none')
             ax.set_ylim([-0.75, 0.75])
             ax.grid()
             ax.legend()
@@ -283,6 +326,9 @@ class MCMCMomentsPlotsPerBin(luigi.Task):
     input_file = luigi.Parameter()
     burnin = luigi.Parameter(default=5000)
     output_dir = luigi.Parameter(default=DefaultParams().output_dir)
+    POL = luigi.Parameter(default=DefaultParams().POL)
+    L = luigi.Parameter(default=DefaultParams().L)
+    M = luigi.Parameter(default=DefaultParams().M)
 
     def output(self):
         # folder for the individual bin
@@ -294,9 +340,9 @@ class MCMCMomentsPlotsPerBin(luigi.Task):
     def run(self):
 
         # values related to moments fitting
-        POL = 2
-        L = 3
-        M = 2
+        POL = self.POL
+        L = self.L
+        M = self.M
 
         yields = []
         values = []

@@ -40,7 +40,8 @@ class AnalyseMoments(luigi.WrapperTask):
 
 
 class MCMCPlotsBins(luigi.WrapperTask):
-    input_dir = luigi.Parameter()
+    input_dir = luigi.Parameter(
+        os.path.join(pipeline.DefaultParams().output_dir, "moments"))
 
     def requires(self):
         files = glob(os.path.join(self.input_dir, "**", "ResultsHS*.root"))
