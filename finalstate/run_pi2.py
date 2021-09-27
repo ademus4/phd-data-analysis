@@ -12,7 +12,7 @@ def main(args):
 
     # iterate through the given input files
     for item in args['input']:
-        ROOT.Run_Pi2(item, args['config'], args['output'])
+        ROOT.Run_Pi2(item, args['config'], args['output'], 0)
 
 
 if __name__ == "__main__":
