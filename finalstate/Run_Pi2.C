@@ -1,13 +1,14 @@
 int Run_Pi2(char * inputFilename, 
 	    string config, 
-	    string outputDir){
+	    string outputDir,
+      int nEvents){
 
   // why dont env variables work here?
   clas12databases::SetCCDBLocalConnection("/home/adamt/dev/clas12root/RunRoot/ccdb.sqlite");
   clas12databases::SetRCDBRootConnection("/home/adamt/dev/clas12root/RunRoot/rcdb.root");
   
   ////Set hipo file to be analysed
-  HipoData hdata;
+  HipoData hdata;  //hipotruth
   hdata.SetFile(inputFilename); //SetFile?
   hdata.LoadAnaDB("$CHANSER/rga_actions/anadb/RGA_ACTIONS_PASS1.db");
   hdata.LoadAnaDB("$CHANSER/anadbs/RunPeriodPass1.db");
@@ -29,7 +30,7 @@ int Run_Pi2(char * inputFilename,
   fsm.GetEventParticles().SetMaxParticles(6);
 
   ////Run through all events
-  fsm.ProcessAll();
+  fsm.ProcessAll(nEvents);
   return 0;
 }
 

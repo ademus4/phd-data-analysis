@@ -9,7 +9,10 @@ void pshm_fit(string data_path,
               float bmin,
               float bmax,
               int nEvents,
-	            bool mcmc){
+	            bool mcmc,
+              int L,
+              int M,
+              int nCores){
   FitManager Fitter;
   Fitter.SetUp().SetOutDir(output_path);
 
@@ -17,19 +20,16 @@ void pshm_fit(string data_path,
   Fitter.SetUp().LoadVariable("Pi2MesonGJPhi[-3.14159,3.14159]");
   Fitter.SetUp().LoadVariable("Pi2MesonEPhi[-3.14159,3.14159]");
   Fitter.SetUp().LoadVariable("Pi2Pol[0.5,0.2,0.6]");
-  Fitter.SetUp().LoadVariable("Pi2MesonMass[0,3]");
  
+
+ // try L = 4 and 6 (8)
   auto configFitPDF=HS::FIT::EXPAND::ComponentsPolSphHarmonic(Fitter.SetUp(),
 							      "Moments",
 							      "Pi2MesonGJCosTh",
 							      "Pi2MesonGJPhi",
 							      "Pi2MesonEPhi",
 							      "Pi2Pol",
-							      3,2); //Moments is the refernce, add kTRUE for even waves only
-
-  //cout<<"##########"<<endl;
-  //cout<<configFitPDF<<endl;
-  //return
+							      L,M); //Moments is the refernce, add kTRUE for even waves only
 
   Fitter.SetUp().FactoryPDF(configFitPDF);
   Fitter.SetUp().LoadSpeciesPDF("Moments",nEvents); //2000 events
@@ -44,16 +44,14 @@ void pshm_fit(string data_path,
   //run the fit
   gBenchmark->Start("fitting");
   if (mcmc){
-    Fitter.SetMinimiser(new RooMcmcSeq(50000,0,100)); //n samples, burn in, steps (actually 1/step), (can be replaced with Roberts algo)
+    //RooMcmcSeq: n samples, burn in, steps (actually 1/step)
+    Fitter.SetMinimiser(new RooMcmcSeqThenCov(40000,10000,100,10000,1000,1)); 
     Fitter.SetUp().AddFitOption(RooFit::Optimize(1));
   } else {
     Fitter.SetMinimiser(new Minuit2());
   }
   //Here::Go(&Fitter); 
-  Proof::Go(&Fitter, 6);  // run somewhere with lots of cores
+  Proof::Go(&Fitter, nCores);
   gBenchmark->Stop("fitting");
   gBenchmark->Print("fitting");
-
-  //merge the meson mass bins
-  //GraphParameters(output_path,"Pi2MesonMass");  // not working?
 }
