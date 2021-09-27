@@ -30,7 +30,13 @@ int Run_Pi2(char * inputFilename,
   fsm.GetEventParticles().SetMaxParticles(6);
 
   ////Run through all events
-  fsm.ProcessAll(nEvents);
+  if (nEvents>0){
+    fsm.ProcessAll(nEvents);
+  } else {
+    fsm.ProcessAll();
+  }
+
+
   return 0;
 }
 

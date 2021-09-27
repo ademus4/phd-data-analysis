@@ -137,7 +137,7 @@ namespace adamt{
     //TD->t=(pGamma-pMeson).M2();
 
     //trigger related
-    if (isGenerated()==false){
+    if (IsGenerated()==false){
       TD->TriggerMesonex=GetEventInfo()->CLAS12()->checkTriggerBit(25);
     }
     
