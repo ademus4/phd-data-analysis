@@ -9,10 +9,6 @@ from concurrent.futures import ThreadPoolExecutor
 class Analysis:
     def __init__(self, output_dir, n_workers=4, cache="4 GB"):
         self.output_dir = output_dir
-        if os.path.isdir(self.output_dir):
-            raise IOError('This folder already exists')
-        else:
-            os.mkdir(self.output_dir)
 
         self.cut_mm2=0.01
         self.cut_mE=0.5
@@ -37,11 +33,10 @@ class Analysis:
         plt.rcParams['xtick.labelsize'] = 14
         plt.rcParams['ytick.labelsize'] = 14
 
-
-    def load_data(self, path, topo=None):
+    def load_data(self, path, tree, topo=None):
         print("Loading:")
         print(path)
-        self.tree_data = uproot4.lazy(path, 
+        self.tree_data = uproot4.lazy({path: tree},
                                       executor=self.executor, 
                                       blocking=False, 
                                       cache=self.cache)
@@ -49,7 +44,6 @@ class Analysis:
         # check if topo given, careful with zero!
         if topo is not None:
             self.tree_data = self.tree_data[self.tree_data['Topo']==topo]
-
 
     def apply_cuts(self):
         cuts = (
@@ -63,7 +57,6 @@ class Analysis:
         )
         self.tree_data_cut = self.tree_data[cuts]
 
-
     def plot_exc_cuts(self):
         params = {
             'bins': 201,
@@ -73,22 +66,23 @@ class Analysis:
 
         fig, axes = plt.subplots(2, 3, figsize=(16, 10))
         axes = axes.flatten()
-        h = axes[0].hist(np.array(self.tree_data['Pi2MissMass2']), range=(-0.1, 0.1), **params)
+        h = axes[0].hist(np.array(self.tree_data['Pi2MissMass2']), range=(-0.25, 0.25), **params)
         axes[0].axvline(-self.cut_mm2, color='red')
         axes[0].axvline(self.cut_mm2, color='red')
         axes[0].set_ylabel('Events')
         axes[0].set_xlabel('Missing Mass ^2')
 
-        h = axes[1].hist(np.array(self.tree_data['Pi2MissE']), range=(-1, 1), **params)
+        h = axes[1].hist(np.array(self.tree_data['Pi2MissE']), range=(-2, 2), **params)
         axes[1].axvline(-self.cut_mE, color='red')
         axes[1].axvline(self.cut_mE, color='red')
         axes[1].set_xlabel('Missing Energy')
 
-        h = axes[2].hist(np.array(self.tree_data['Pi2MissP']), range=(-0.5, 1), **params)
+        h = axes[2].hist(np.array(self.tree_data['Pi2MissP']), range=(-0.1, 1), **params)
         axes[2].axvline(self.cut_mP, color='red')
         axes[2].set_xlabel('Missing Momentum')
 
-        h = axes[3].hist(np.array(self.tree_data['Pi2MissMassnP']), range=(0.5, 1.5), **params)
+
+        h = axes[3].hist(np.array(self.tree_data['Pi2MissMassnP']), range=(0, 2), **params)
         axes[3].set_xlabel('Missing Mass 2pi')
         axes[3].axvline(self.cut_mm2pi[0], color='red')
         axes[3].axvline(self.cut_mm2pi[1], color='red')
@@ -99,8 +93,12 @@ class Analysis:
         axes[4].axvline(self.cut_elp[1], color='red')
 
         plt.tight_layout()
-        fig.savefig(os.path.join(self.output_dir, 'exclusivity_cuts.png'))
 
+        # create output dir if it doesnt exist
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        fig.savefig(os.path.join(self.output_dir, 'exclusivity_cuts.png'))
 
     def plot_timing(self, xrange=(-0.5, 0.5)):
         vals = [
@@ -124,8 +122,12 @@ class Analysis:
         ax.set_ylabel('Events (per bin)')
         ax.set_xlabel('Time [ns]')
         plt.tight_layout()
-        fig.savefig(os.path.join(self.output_dir, 'timing_plots.png'))
 
+        # create output dir if it doesnt exist
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        fig.savefig(os.path.join(self.output_dir, 'timing_plots.png'))
 
     def plot_mesons(self, cuts=False):
         params = {
@@ -159,8 +161,12 @@ class Analysis:
         if cuts:
             filename = 'cut_' + filename
         plt.tight_layout()
-        fig.savefig(os.path.join(self.output_dir, filename))
 
+        # create output dir if it doesnt exist
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        fig.savefig(os.path.join(self.output_dir, filename))
 
     def plot_electron(self, cuts=False):
         params = {
@@ -174,7 +180,7 @@ class Analysis:
             data = self.tree_data
 
         vals = [
-            ["Pi2ElP",      (0, 11), 201,  'Momentum [GeV/c]'],
+            ["Pi2ElP",      (0, 7), 201,   'Momentum [GeV/c]'],
             ["Pi2ElTh",     (1, 7), 201,   '$\\theta$ [deg]'],
             ["Pi2ElDE",     (0, 30), 201,  'Delta Energy [MeV?]'],
             ["Pi2ElRegion", (0, 5000), 21, 'Region'],
@@ -198,6 +204,11 @@ class Analysis:
         if cuts:
             filename = 'cut_' + filename
         plt.tight_layout()
+
+        # create output dir if it doesnt exist
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
         fig.savefig(os.path.join(self.output_dir, filename))
 
     def plot_proton(self, cuts=False):
@@ -234,13 +245,18 @@ class Analysis:
             axes[i].set_title(val.replace('Pi2', ''))
             axes[i].set_ylabel('Events (per bin)')
             axes[i].set_xlabel(xlab)
+            axes[i].legend()
 
         filename = 'proton_plots.png'
         if cuts:
             filename = 'cut_' + filename
         plt.tight_layout()
-        fig.savefig(os.path.join(self.output_dir, filename))
 
+        # create output dir if it doesnt exist
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        fig.savefig(os.path.join(self.output_dir, filename))
 
     def plot_pip(self, cuts=False):
         params = {
@@ -282,8 +298,12 @@ class Analysis:
         if cuts:
             filename = 'cut_' + filename
         plt.tight_layout()
-        fig.savefig(os.path.join(self.output_dir, filename))
 
+        # create output dir if it doesnt exist
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        fig.savefig(os.path.join(self.output_dir, filename))
 
     def plot_pim(self, cuts=False):
         params = {
@@ -325,6 +345,11 @@ class Analysis:
         if cuts:
             filename = 'cut_' + filename
         plt.tight_layout()
+
+        # create output dir if it doesnt exist
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
         fig.savefig(os.path.join(self.output_dir, filename))
 
 
@@ -362,6 +387,11 @@ class Analysis:
         if cuts:
             filename = 'cut_' + filename
         plt.tight_layout()
+
+        # create output dir if it doesnt exist
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
         fig.savefig(os.path.join(self.output_dir, filename))
 
     def plot_meson_decay_angle(self, cuts=False):
@@ -428,11 +458,15 @@ class Analysis:
             fig.text(0.5, 0.05, "Meson Mass [GeV/$c^2$]", va='center', ha='center', )
             fig.text(0.07, 0.5, "Meson Decay Angle (GJ) Phi", va='center', ha='center', rotation='vertical')
 
-            filename = plot['filename']
-            if cuts:
-                filename = 'cut_' + filename
-            fig.savefig(os.path.join(self.output_dir, filename))
-        
+        filename = 'meson_decay_angle_plots.png'
+        if cuts:
+            filename = 'cut_' + filename
+
+        # create output dir if it doesnt exist
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        fig.savefig(os.path.join(self.output_dir, filename))
 
     def save(self, filename):
         # save the filtered data to filename
