@@ -128,10 +128,12 @@ class Plotting(luigi.Task):
         # plot the raw data first
         output_dir = self.output().path
         A = Analysis(output_dir=output_dir)
-        A.load_data(file_path_data, topo=0)
+        A.load_data(file_path_data, tree='FINALOUTTREE', topo=0)
         A.plot_exc_cuts()
         A.plot_timing()
         A.plot_mesons()
+        A.plot_meson_2D()
+        A.plot_meson_decay_angle()
         A.plot_electron()
         A.plot_proton()
         A.plot_pip()
@@ -140,10 +142,16 @@ class Plotting(luigi.Task):
         # plots the data with cuts applied
         output_dir = os.path.join(self.output().path, 'cuts')
         A = Analysis(output_dir=output_dir)
-        A.load_data(file_path_cuts, topo=0)
+        A.load_data(file_path_cuts, tree='withcuts', topo=0)
+        A.plot_exc_cuts()
+        A.plot_timing()
         A.plot_mesons()
         A.plot_meson_2D()
         A.plot_meson_decay_angle()
+        A.plot_electron()
+        A.plot_proton()
+        A.plot_pip()
+        A.plot_pim()
 
 
 class PlotFile(luigi.Task):
