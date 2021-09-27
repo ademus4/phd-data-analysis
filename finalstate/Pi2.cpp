@@ -68,7 +68,7 @@ namespace adamt{
 
       TD->PimTh      =_pim.CLAS12()->getTheta();
       TD->PimP       =_pim.CLAS12()->getP();
-      TD->PimTime    =_pim.CLAS12()->getTime();
+      TD->PimTime    =_pim.CLAS12()->getTime();  //delta time
       TD->PimRegion  =_pim.CLAS12()->getRegion();
 
       ///////------------------------------------///////
@@ -137,8 +137,10 @@ namespace adamt{
     //TD->t=(pGamma-pMeson).M2();
 
     //trigger related
-    TD->TriggerMesonex=GetEventInfo()->CLAS12()->checkTriggerBit(25);
-
+    if (isGenerated()==false){
+      TD->TriggerMesonex=GetEventInfo()->CLAS12()->checkTriggerBit(25);
+    }
+    
     //invariant masses
     TD->MesonMass=pMeson.M();
     TD->DppMass=pDpp.M();
