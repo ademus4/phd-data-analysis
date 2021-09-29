@@ -5,6 +5,12 @@ import uproot3
 import uproot4
 from concurrent.futures import ThreadPoolExecutor
 
+DETECTOR_REGIONS = {
+    1000: 'FT',
+    2000: 'FD',
+    3000: 'CD'
+}
+
 
 class Analysis:
     def __init__(self, output_dir, n_workers=4, cache="4 GB"):
@@ -217,16 +223,14 @@ class Analysis:
             'linewidth': 2
         }
 
-        regions = [1000, 2000, 3000]
-
         if cuts:
             data = self.tree_data_cut
         else:
             data = self.tree_data
 
         vals = [
-            ["Pi2ProtP",      (0, 7), 201, 'Momentum [GeV/c]'],
-            ["Pi2ProtTh",  (0, 110), 201, '$\\theta$ [deg]'],
+            ["Pi2ProtP",      (0, 7),   201, 'Momentum [GeV/c]'],
+            ["Pi2ProtTh",     (0, 110), 201, '$\\theta$ [deg]'],
             ["Pi2ProtRegion", (0, 5000), 21, 'Region'],
         ]
 
@@ -238,10 +242,10 @@ class Analysis:
                 norm = 180/np.pi
             else:
                 norm = 1
-            for region in regions:
+            for region, label in DETECTOR_REGIONS.items():
                 h = axes[i].hist(
                     np.array(data[data['Pi2ProtRegion']==region][val])*norm, 
-                    range=r, bins=bins, label=f"{region}", **params)
+                    range=r, bins=bins, label=label, **params)
             axes[i].set_title(val.replace('Pi2', ''))
             axes[i].set_ylabel('Events (per bin)')
             axes[i].set_xlabel(xlab)
@@ -257,14 +261,13 @@ class Analysis:
             os.makedirs(self.output_dir)
 
         fig.savefig(os.path.join(self.output_dir, filename))
+        plt.close('all')
 
     def plot_pip(self, cuts=False):
         params = {
             'histtype': 'step',
             'linewidth': 2
         }
-
-        regions = [1000, 2000, 3000]
 
         if cuts:
             data = self.tree_data_cut
@@ -285,10 +288,10 @@ class Analysis:
                 norm = 180/np.pi
             else:
                 norm = 1
-            for region in regions:
+            for region, label in DETECTOR_REGIONS.items():
                 h = axes[i].hist(
                     np.array(data[data['Pi2PipRegion']==region][val])*norm, 
-                    range=r, bins=bins, label=f"{region}", **params)
+                    range=r, bins=bins, label=label, **params)
             axes[i].set_title(val.replace('Pi2', ''))
             axes[i].set_ylabel('Events (per bin)')
             axes[i].set_xlabel(xlab)
@@ -304,14 +307,13 @@ class Analysis:
             os.makedirs(self.output_dir)
 
         fig.savefig(os.path.join(self.output_dir, filename))
+        plt.close('all')
 
     def plot_pim(self, cuts=False):
         params = {
             'histtype': 'step',
             'linewidth': 2
         }
-
-        regions = [1000, 2000, 3000]
 
         if cuts:
             data = self.tree_data_cut
@@ -332,10 +334,10 @@ class Analysis:
                 norm = 180/np.pi
             else:
                 norm = 1
-            for region in regions:
+            for region, label in DETECTOR_REGIONS.items():
                 h = axes[i].hist(
                     np.array(data[data['Pi2PimRegion']==region][val])*norm, 
-                    range=r, bins=bins, label=f"{region}", **params)
+                    range=r, bins=bins, label=label, **params)
             axes[i].set_title(val.replace('Pi2', ''))
             axes[i].set_ylabel('Events (per bin)')
             axes[i].set_xlabel(xlab)
@@ -351,7 +353,7 @@ class Analysis:
             os.makedirs(self.output_dir)
 
         fig.savefig(os.path.join(self.output_dir, filename))
-
+        plt.close('all')
 
     def plot_meson_2D(self, cuts=False):
         val1 = ["Pi2MesonMass", "2$\pi$ Mass"]
