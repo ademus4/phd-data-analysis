@@ -402,26 +402,41 @@ class Analysis:
 
         plots = [
             {
-                'filename': 'meson_decay_phi.png',
+                'filename': 'meson_decay_GJ_phi.png',
                 'vals': ['Pi2MesonMass', 'Pi2MesonGJPhi'],
                 'labels': ['Meson Mass [GeV/$c^2$]', 'Meson Decay Angle (GJ) Phi'],
                 'params': {
                    'range': [[0, 3.5], [-3.5, 3.5]],
                     'bins': 100,
                 }
-
             },
             {
-                'filename': 'meson_decay_costh.png',
+                'filename': 'meson_decay_GJ_costh.png',
                 'vals': ['Pi2MesonMass', 'Pi2MesonGJCosTh'],
                 'labels': ['Meson Mass [GeV/$c^2$]', 'Meson Decay Angle (GJ) CosTh'],
                 'params': {
                    'range': [[0, 3.5], [-1, 1]],
                     'bins': 100,
                 }
-
+            },
+            {
+                'filename': 'meson_decay_H_phi.png',
+                'vals': ['Pi2MesonMass', 'Pi2MesonHPhi'],
+                'labels': ['Meson Mass [GeV/$c^2$]', 'Meson Decay Angle (helicity) Phi'],
+                'params': {
+                    'range': [[0, 3.5], [-3.5, 3.5]],
+                    'bins': 100,
+                }
+            },
+            {
+                'filename': 'meson_decay_H_costh.png',
+                'vals': ['Pi2MesonMass', 'Pi2MesonHCosTh'],
+                'labels': ['Meson Mass [GeV/$c^2$]', 'Meson Decay Angle (helicity) CosTh'],
+                'params': {
+                    'range': [[0, 3.5], [-1, 1]],
+                    'bins': 100,
+                }
             }
-
         ]
 
         # mass bins for meson
@@ -432,12 +447,13 @@ class Analysis:
             'family': 'serif',
             'color':  'white',
             'weight': 'normal',
-            'size': 12,
+            'size': 14,
         }
 
         for plot in plots:
             params = plot['params']
             vals = plot['vals']
+            labels = plot['labels']
             fig, axes = plt.subplots(3, 3, 
                                     figsize=(12, 10), 
                                     sharex=True, sharey=True, 
@@ -453,20 +469,16 @@ class Analysis:
                 ax.hist2d(x, y, **params)
                 label = '{:.2f}>-t>{:.2f}'.format(mass_low, mass_high)
                 ax.text(
-                    0.05, 0.05, label, fontdict=font, transform=ax.transAxes)
+                    0.5, 0.05, label, fontdict=font, transform=ax.transAxes)
 
-            fig.text(0.5, 0.05, "Meson Mass [GeV/$c^2$]", va='center', ha='center', )
-            fig.text(0.07, 0.5, "Meson Decay Angle (GJ) Phi", va='center', ha='center', rotation='vertical')
+            fig.text(0.5, 0.05, labels[0], va='center', ha='center', )
+            fig.text(0.07, 0.5, labels[1], va='center', ha='center', rotation='vertical')
 
-        filename = 'meson_decay_angle_plots.png'
-        if cuts:
-            filename = 'cut_' + filename
+            # create output dir if it doesnt exist
+            if not os.path.isdir(self.output_dir):
+                os.makedirs(self.output_dir)
 
-        # create output dir if it doesnt exist
-        if not os.path.isdir(self.output_dir):
-            os.makedirs(self.output_dir)
-
-        fig.savefig(os.path.join(self.output_dir, filename))
+            fig.savefig(os.path.join(self.output_dir, plot['filename']))
 
     def save(self, filename):
         # save the filtered data to filename
