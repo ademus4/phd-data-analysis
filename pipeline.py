@@ -103,6 +103,19 @@ class ApplyCuts(luigi.Task):
         df.Snapshot("withcuts", self.output().path)
 
 
+class MergeData(ExternalProgramTask):
+    input_files = luigi.Parameter()
+    output_dir = luigi.Parameter(default=DefaultParams().output_dir)
+    output_filename = luigi.Parameter(default='merged.root')
+
+    def program_args(self):
+        return ["hadd", self.output().path] + glob(self.input_files)
+
+    def output(self):
+        return luigi.LocalTarget(os.path.join(self.output_dir,
+                                              self.output_filename))
+
+
 class Plotting(luigi.Task):
     input_file = luigi.Parameter()
     output_dir = luigi.Parameter(default=DefaultParams().output_dir)
