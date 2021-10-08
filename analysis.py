@@ -314,7 +314,6 @@ class Analysis:
                 axes[i].set_title(val.replace('Pi2', ''))
                 axes[i].set_ylabel('Events (per bin)')
                 axes[i].set_xlabel(xlab)
-                axes[i].legend()
                 if j == 0:
                     axes[i].legend()
 
@@ -357,7 +356,6 @@ class Analysis:
                 axes[i].set_title(val.replace('Pi2', ''))
                 axes[i].set_ylabel('Events (per bin)')
                 axes[i].set_xlabel(xlab)
-                axes[i].legend()
                 if j == 0:
                     axes[i].legend()
 
