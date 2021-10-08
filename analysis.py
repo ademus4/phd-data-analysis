@@ -23,6 +23,7 @@ class Analysis:
         self.cut_elp=(1, 4.5)
         self.tree_data = []
         self.tree_data_cut = []
+        self.datasets = {}
 
         self.executor = ThreadPoolExecutor(max_workers=n_workers)
         self.cache = uproot4.LRUArrayCache(cache)
@@ -39,17 +40,22 @@ class Analysis:
         plt.rcParams['xtick.labelsize'] = 14
         plt.rcParams['ytick.labelsize'] = 14
 
-    def load_data(self, path, tree, topo=None):
+    def load_data(self, path, tree, label, topo=None):
+        if len(self.datasets) == 2:
+            raise ValueError('Cannot compare more than 2 datasets')
+
         print("Loading:")
         print(path)
-        self.tree_data = uproot4.lazy({path: tree},
-                                      executor=self.executor, 
-                                      blocking=False, 
-                                      cache=self.cache)
+        tree_data = uproot4.lazy({path: tree},
+                                 executor=self.executor,
+                                 blocking=False,
+                                 cache=self.cache)
         
         # check if topo given, careful with zero!
         if topo is not None:
-            self.tree_data = self.tree_data[self.tree_data['Topo']==topo]
+            tree_data = tree_data[tree_data['Topo'] == topo]
+
+        self.datasets[label] = tree_data
 
     def apply_cuts(self):
         cuts = (
@@ -63,7 +69,7 @@ class Analysis:
         )
         self.tree_data_cut = self.tree_data[cuts]
 
-    def plot_exc_cuts(self):
+    def plot_exc_cuts(self, density=False):
         params = {
             'bins': 201,
             'histtype': 'step',
@@ -72,31 +78,52 @@ class Analysis:
 
         fig, axes = plt.subplots(2, 3, figsize=(16, 10))
         axes = axes.flatten()
-        h = axes[0].hist(np.array(self.tree_data['Pi2MissMass2']), range=(-0.25, 0.25), **params)
-        axes[0].axvline(-self.cut_mm2, color='red')
-        axes[0].axvline(self.cut_mm2, color='red')
-        axes[0].set_ylabel('Events')
-        axes[0].set_xlabel('Missing Mass ^2')
 
-        h = axes[1].hist(np.array(self.tree_data['Pi2MissE']), range=(-2, 2), **params)
-        axes[1].axvline(-self.cut_mE, color='red')
-        axes[1].axvline(self.cut_mE, color='red')
-        axes[1].set_xlabel('Missing Energy')
+        for i, (label, data) in enumerate(self.datasets.items()):
+            n = 0
+            h = axes[n].hist(np.array(data['Pi2MissMass2']),
+                             range=(-0.05, 0.05), label=label, density=density,
+                             **params)
+            axes[n].axvline(-self.cut_mm2, color='red')
+            axes[n].axvline(self.cut_mm2, color='red')
+            axes[n].set_ylabel('Events')
+            axes[n].set_xlabel('Missing Mass ^2')
 
-        h = axes[2].hist(np.array(self.tree_data['Pi2MissP']), range=(-0.1, 1), **params)
-        axes[2].axvline(self.cut_mP, color='red')
-        axes[2].set_xlabel('Missing Momentum')
+            n += 1
+            h = axes[n].hist(np.array(data['Pi2MissE']),
+                             range=(-2, 2), label=label, density=density,
+                             **params)
+            axes[n].axvline(-self.cut_mE, color='red')
+            axes[n].axvline(self.cut_mE, color='red')
+            axes[n].set_xlabel('Missing Energy')
 
+            n += 1
+            h = axes[n].hist(np.array(data['Pi2MissP']),
+                             range=(-0.1, 1), label=label, density=density,
+                             **params)
+            axes[n].axvline(self.cut_mP, color='red')
+            axes[n].set_xlabel('Missing Momentum')
 
-        h = axes[3].hist(np.array(self.tree_data['Pi2MissMassnP']), range=(0, 2), **params)
-        axes[3].set_xlabel('Missing Mass 2pi')
-        axes[3].axvline(self.cut_mm2pi[0], color='red')
-        axes[3].axvline(self.cut_mm2pi[1], color='red')
+            n += 1
+            h = axes[n].hist(np.array(data['Pi2MissMassnP']),
+                             range=(0, 2), label=label, density=density,
+                             **params)
+            axes[n].set_xlabel('Missing Mass 2pi')
+            axes[n].axvline(self.cut_mm2pi[0], color='red')
+            axes[n].axvline(self.cut_mm2pi[1], color='red')
 
-        h = axes[4].hist(np.array(self.tree_data['Pi2ElP']), range=(0, 6), **params)
-        axes[4].set_xlabel('Electron Momentum [GeV]')
-        axes[4].axvline(self.cut_elp[0], color='red')
-        axes[4].axvline(self.cut_elp[1], color='red')
+            n += 1
+            h = axes[n].hist(np.array(data['Pi2ElP']),
+                             range=(0, 6), label=label, density=density,
+                             **params)
+            axes[n].set_xlabel('Electron Momentum [GeV]')
+            axes[n].axvline(self.cut_elp[0], color='red')
+            axes[n].axvline(self.cut_elp[1], color='red')
+
+            # add legends to plots if they use more than 1 dataset
+            if len(self.datasets) > 1:
+                for v in range(n+1):
+                    axes[v].legend()
 
         plt.tight_layout()
 
@@ -135,17 +162,12 @@ class Analysis:
 
         fig.savefig(os.path.join(self.output_dir, 'timing_plots.png'))
 
-    def plot_mesons(self, cuts=False):
+    def plot_mesons(self, density=False):
         params = {
             'bins': 201,
             'histtype': 'step',
             'linewidth': 2
         }
-
-        if cuts:
-            data = self.tree_data_cut
-        else:
-            data = self.tree_data
 
         vals = [
             ["Pi2MesonMass", (0, 3), 'Mass [GeV/$c^2$]'],
@@ -156,34 +178,33 @@ class Analysis:
 
         fig, ax = plt.subplots(2, 2, figsize=(12, 10))
         axes = ax.flatten()
-        for i, valr in enumerate(vals):
-            val, r , xlab = valr
-            h = axes[i].hist(np.abs(np.array(data[val])), range=r, **params)
-            axes[i].set_title(val.replace('Pi2', ''))
-            axes[i].set_ylabel('Events (per bin)')
-            axes[i].set_xlabel(xlab)
+        for label, data in self.datasets.items():
+            for i, valr in enumerate(vals):
+                val, r , xlab = valr
+                h = axes[i].hist(np.abs(np.array(data[val])),
+                                 range=r, label=label, density=density,
+                                 **params)
+                axes[i].set_title(val.replace('Pi2', ''))
+                axes[i].set_ylabel('Events (per bin)')
+                axes[i].set_xlabel(xlab)
 
-        filename = 'meson_plots.png'
-        if cuts:
-            filename = 'cut_' + filename
+                # add legends to plots if they use more than 1 dataset
+                if len(self.datasets) > 1:
+                    axes[i].legend()
+
         plt.tight_layout()
 
         # create output dir if it doesnt exist
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
 
-        fig.savefig(os.path.join(self.output_dir, filename))
+        fig.savefig(os.path.join(self.output_dir, 'meson_plots.png'))
 
-    def plot_electron(self, cuts=False):
+    def plot_electron(self, density=False):
         params = {
             'histtype': 'step',
             'linewidth': 2
         }
-
-        if cuts:
-            data = self.tree_data_cut
-        else:
-            data = self.tree_data
 
         vals = [
             ["Pi2ElP",      (0, 7), 201,   'Momentum [GeV/c]'],
@@ -195,39 +216,39 @@ class Analysis:
 
         fig, ax = plt.subplots(2, 3, figsize=(16, 10))
         axes = ax.flatten()
-        for i, valr in enumerate(vals):
-            val, r, bins, xlab = valr
-            if val[-2:] == 'Th':
-                norm = 180/np.pi
-            else:
-                norm = 1
-            h = axes[i].hist(np.array(data[val])*norm, range=r, bins=bins, **params)
-            axes[i].set_title(val.replace('Pi2', ''))
-            axes[i].set_ylabel('Events (per bin)')
-            axes[i].set_xlabel(xlab)
+        for label, data in self.datasets.items():
+            for i, valr in enumerate(vals):
+                val, r, bins, xlab = valr
+                if val[-2:] == 'Th':
+                    norm = 180/np.pi
+                else:
+                    norm = 1
+                h = axes[i].hist(np.array(data[val])*norm,
+                                 range=r, bins=bins, label=label,
+                                 density=density, **params)
+                axes[i].set_title(val.replace('Pi2', ''))
+                axes[i].set_ylabel('Events (per bin)')
+                axes[i].set_xlabel(xlab)
 
-        filename = 'electron_plots.png'
-        if cuts:
-            filename = 'cut_' + filename
+                # add legends to plots if they use more than 1 dataset
+                if len(self.datasets) > 1:
+                    axes[i].legend()
+
         plt.tight_layout()
 
         # create output dir if it doesnt exist
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
 
-        fig.savefig(os.path.join(self.output_dir, filename))
+        fig.savefig(os.path.join(self.output_dir, 'electron_plots.png'))
 
-    def plot_proton(self, cuts=False):
+    def plot_proton(self, density=False):
+        linestyles = ['-', '--']
+        linecolours = ['b', 'orange', 'g']
         params = {
             'histtype': 'step',
             'linewidth': 2
         }
-
-        if cuts:
-            data = self.tree_data_cut
-        else:
-            data = self.tree_data
-
         vals = [
             ["Pi2ProtP",      (0, 7),   201, 'Momentum [GeV/c]'],
             ["Pi2ProtTh",     (0, 110), 201, '$\\theta$ [deg]'],
@@ -236,44 +257,40 @@ class Analysis:
 
         fig, ax = plt.subplots(1, 3, figsize=(16, 5))
         axes = ax.flatten()
-        for i, valr in enumerate(vals):
-            val, r, bins, xlab = valr
-            if val[-2:] == 'Th':
-                norm = 180/np.pi
-            else:
-                norm = 1
-            for region, label in DETECTOR_REGIONS.items():
-                h = axes[i].hist(
-                    np.array(data[data['Pi2ProtRegion']==region][val])*norm, 
-                    range=r, bins=bins, label=label, **params)
-            axes[i].set_title(val.replace('Pi2', ''))
-            axes[i].set_ylabel('Events (per bin)')
-            axes[i].set_xlabel(xlab)
-            axes[i].legend()
+        for j, (_, data) in enumerate(self.datasets.items()):
+            for i, valr in enumerate(vals):
+                val, r, bins, xlab = valr
+                if val[-2:] == 'Th':
+                    norm = 180/np.pi
+                else:
+                    norm = 1
+                for c, (region, label) in enumerate(DETECTOR_REGIONS.items()):
+                    h = axes[i].hist(
+                        np.array(data[data['Pi2ProtRegion']==region][val])*norm,
+                        range=r, bins=bins, label=label, density=density,
+                        ec=linecolours[c], linestyle=linestyles[j], **params)
+                axes[i].set_title(val.replace('Pi2', ''))
+                axes[i].set_ylabel('Events (per bin)')
+                axes[i].set_xlabel(xlab)
+                if j == 0:
+                    axes[i].legend()
 
-        filename = 'proton_plots.png'
-        if cuts:
-            filename = 'cut_' + filename
         plt.tight_layout()
 
         # create output dir if it doesnt exist
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
 
-        fig.savefig(os.path.join(self.output_dir, filename))
+        fig.savefig(os.path.join(self.output_dir,  'proton_plots.png'))
         plt.close('all')
 
-    def plot_pip(self, cuts=False):
+    def plot_pip(self, density=False):
+        linestyles = ['-', '--']
+        linecolours = ['b', 'orange', 'g']
         params = {
             'histtype': 'step',
             'linewidth': 2
         }
-
-        if cuts:
-            data = self.tree_data_cut
-        else:
-            data = self.tree_data
-
         vals = [
             ["Pi2PipP",      (0, 7), 201,      'Momentum [GeV/c]'],
             ["Pi2PipTh",     (0, 110), 201,    '$\\theta$ [deg]'],
@@ -282,44 +299,41 @@ class Analysis:
 
         fig, ax = plt.subplots(1, 3, figsize=(16, 5))
         axes = ax.flatten()
-        for i, valr in enumerate(vals):
-            val, r, bins, xlab = valr
-            if val[-2:] == 'Th':
-                norm = 180/np.pi
-            else:
-                norm = 1
-            for region, label in DETECTOR_REGIONS.items():
-                h = axes[i].hist(
-                    np.array(data[data['Pi2PipRegion']==region][val])*norm, 
-                    range=r, bins=bins, label=label, **params)
-            axes[i].set_title(val.replace('Pi2', ''))
-            axes[i].set_ylabel('Events (per bin)')
-            axes[i].set_xlabel(xlab)
-            axes[i].legend()
+        for j, (_, data) in enumerate(self.datasets.items()):
+            for i, valr in enumerate(vals):
+                val, r, bins, xlab = valr
+                if val[-2:] == 'Th':
+                    norm = 180/np.pi
+                else:
+                    norm = 1
+                for c, (region, label) in enumerate(DETECTOR_REGIONS.items()):
+                    h = axes[i].hist(
+                        np.array(data[data['Pi2PipRegion']==region][val])*norm,
+                        range=r, bins=bins, label=label, density=density,
+                        ec=linecolours[c], linestyle=linestyles[j], **params)
+                axes[i].set_title(val.replace('Pi2', ''))
+                axes[i].set_ylabel('Events (per bin)')
+                axes[i].set_xlabel(xlab)
+                axes[i].legend()
+                if j == 0:
+                    axes[i].legend()
 
-        filename = 'pip_plots.png'
-        if cuts:
-            filename = 'cut_' + filename
         plt.tight_layout()
 
         # create output dir if it doesnt exist
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
 
-        fig.savefig(os.path.join(self.output_dir, filename))
+        fig.savefig(os.path.join(self.output_dir, 'pip_plots.png'))
         plt.close('all')
 
-    def plot_pim(self, cuts=False):
+    def plot_pim(self, density=False):
+        linestyles = ['-', '--']
+        linecolours = ['b', 'orange', 'g']
         params = {
             'histtype': 'step',
             'linewidth': 2
         }
-
-        if cuts:
-            data = self.tree_data_cut
-        else:
-            data = self.tree_data
-
         vals = [
             ["Pi2PimP",      (0, 7), 201,   'Momentum [GeV/c]'],
             ["Pi2PimTh",     (0, 80), 201,  '$\\theta$ [deg]'],
@@ -328,47 +342,45 @@ class Analysis:
 
         fig, ax = plt.subplots(1, 3, figsize=(16, 5))
         axes = ax.flatten()
-        for i, valr in enumerate(vals):
-            val, r, bins, xlab = valr
-            if val[-2:] == 'Th':
-                norm = 180/np.pi
-            else:
-                norm = 1
-            for region, label in DETECTOR_REGIONS.items():
-                h = axes[i].hist(
-                    np.array(data[data['Pi2PimRegion']==region][val])*norm, 
-                    range=r, bins=bins, label=label, **params)
-            axes[i].set_title(val.replace('Pi2', ''))
-            axes[i].set_ylabel('Events (per bin)')
-            axes[i].set_xlabel(xlab)
-            axes[i].legend()
+        for j, (_, data) in enumerate(self.datasets.items()):
+            for i, valr in enumerate(vals):
+                val, r, bins, xlab = valr
+                if val[-2:] == 'Th':
+                    norm = 180/np.pi
+                else:
+                    norm = 1
+                for c, (region, label) in enumerate(DETECTOR_REGIONS.items()):
+                    h = axes[i].hist(
+                        np.array(data[data['Pi2PimRegion']==region][val])*norm,
+                        range=r, bins=bins, label=label, density=density,
+                        ec=linecolours[c], linestyle=linestyles[j], **params)
+                axes[i].set_title(val.replace('Pi2', ''))
+                axes[i].set_ylabel('Events (per bin)')
+                axes[i].set_xlabel(xlab)
+                axes[i].legend()
+                if j == 0:
+                    axes[i].legend()
 
-        filename = 'pim_plots.png'
-        if cuts:
-            filename = 'cut_' + filename
         plt.tight_layout()
 
         # create output dir if it doesnt exist
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
 
-        fig.savefig(os.path.join(self.output_dir, filename))
+        fig.savefig(os.path.join(self.output_dir, 'pim_plots.png'))
         plt.close('all')
 
-    def plot_meson_2D(self, cuts=False):
+    def plot_meson_2D(self):
         val1 = ["Pi2MesonMass", "2$\pi$ Mass"]
         val2 = ["Pi2D0Mass",    "$\Delta$0 Mass"]
         val3 = ["Pi2DppMass",   "$\Delta$++ Mass"]
-
-        if cuts:
-            data = self.tree_data_cut
-        else:
-            data = self.tree_data
 
         params = {
             'range': [[0.5, 2.5], [1, 3.5]],
             'bins': 100,
         }
+
+        _, data = list(self.datasets.items())[0]
 
         fig, axes = plt.subplots(1, 2, figsize=(16,6))
         axes[0].hist2d(
@@ -384,24 +396,16 @@ class Analysis:
             **params)
         axes[1].set_xlabel(val1[1])
         axes[1].set_ylabel(val3[1])
-        
-        filename = 'meson_2D_plots.png'
-        if cuts:
-            filename = 'cut_' + filename
+
         plt.tight_layout()
 
         # create output dir if it doesnt exist
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
 
-        fig.savefig(os.path.join(self.output_dir, filename))
+        fig.savefig(os.path.join(self.output_dir, 'meson_2D_plots.png'))
 
-    def plot_meson_decay_angle(self, cuts=False):
-        if cuts:
-            data = self.tree_data_cut
-        else:
-            data = self.tree_data
-
+    def plot_meson_decay_angle(self):
         plots = [
             {
                 'filename': 'meson_decay_GJ_phi.png',
@@ -451,6 +455,8 @@ class Analysis:
             'weight': 'normal',
             'size': 14,
         }
+
+        _, data = list(self.datasets.items())[0]
 
         for plot in plots:
             params = plot['params']
