@@ -486,6 +486,43 @@ class Analysis:
 
             fig.savefig(os.path.join(self.output_dir, plot['filename']))
 
+    def plot_meson_decay_angle_1D(self, density=False):
+        params = {
+            'histtype': 'step',
+            'linewidth': 2
+        }
+        vals = [
+            ["Pi2MesonGJPhi",   (-3.1, 3.1), 201, '$\\Phi$'],
+            ["Pi2MesonHPhi",    (-3.1, 3.1), 201, '$\\Phi$'],
+            ["Pi2MesonGJCosTh", (-1, 1), 201, '$\\theta$'],
+            ["Pi2MesonHCosTh",  (-1, 1), 201, '$\\theta$'],
+        ]
+
+        fig, ax = plt.subplots(2, 2, figsize=(12, 10))
+        axes = ax.flatten()
+        for j, (label, data) in enumerate(self.datasets.items()):
+            for i, valr in enumerate(vals):
+                val, r, bins, xlab = valr
+
+                h = axes[i].hist(np.array(data[val]),
+                                 range=r, bins=bins, label=label,
+                                 density=density, **params)
+                axes[i].set_title(val.replace('Pi2', ''))
+                axes[i].set_ylabel('Events (per bin)')
+                axes[i].set_xlabel(xlab)
+                # add legends to plots if they use more than 1 dataset
+                if len(self.datasets) > 1:
+                    axes[i].legend()
+
+        plt.tight_layout()
+
+        # create output dir if it doesnt exist
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        fig.savefig(os.path.join(self.output_dir, 'meson_decay_angle_1D.png'))
+        plt.close('all')
+
     def save(self, filename):
         # save the filtered data to filename
         return
