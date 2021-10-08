@@ -146,6 +146,7 @@ class Plotting(luigi.Task):
         A.plot_mesons()
         A.plot_meson_2D()
         A.plot_meson_decay_angle()
+        A.plot_meson_decay_angle_1D()
         A.plot_electron()
         A.plot_proton()
         A.plot_pip()
@@ -159,6 +160,7 @@ class Plotting(luigi.Task):
         A.plot_mesons()
         A.plot_meson_2D()
         A.plot_meson_decay_angle()
+        A.plot_meson_decay_angle_1D()
         A.plot_electron()
         A.plot_proton()
         A.plot_pip()
@@ -217,6 +219,7 @@ class PlotFilesComparison(luigi.Task):
         A.plot_proton()
         A.plot_pip()
         A.plot_pim()
+        A.plot_meson_decay_angle_1D(density=True)
 
 
 class MomentFitting(luigi.Task):
