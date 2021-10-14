@@ -403,6 +403,193 @@ class Analysis:
 
         fig.savefig(os.path.join(self.output_dir, 'meson_2D_plots.png'))
 
+    def plot_1d_for_t_regions(self, filename='_1d_for_t.png', density=False):
+        params = {
+            'histtype': 'step',
+            'linewidth': 2
+        }
+
+        vals = [
+            {
+                'val': "Pi2ElP",
+                'label': 'Momentum [GeV/c]',
+                'norm': 1,
+                'range': [0, 7],
+                'bins': 100,
+                'region_var': 'Pi2ElRegion'
+            },
+            {
+                'val': "Pi2ElTh",
+                'label': '$\\theta$ [deg]',
+                'norm': 180 / np.pi,
+                'range': [0, 110],
+                'bins': 100,
+                'region_var': 'Pi2ElRegion'
+            },
+            {
+                'val': "Pi2ProtP",
+                'label': 'Momentum [GeV/c]',
+                'norm': 1,
+                'range': [0, 7],
+                'bins': 100,
+                'region_var': 'Pi2ProtRegion'
+            },
+            {
+                'val': "Pi2ProtTh",
+                'label': '$\\theta$ [deg]',
+                'norm': 180 / np.pi,
+                'range': [0, 110],
+                'bins': 100,
+                'region_var': 'Pi2ProtRegion'
+            },
+            {
+                'val': "Pi2PipP",
+                'label': 'Momentum [GeV/c]',
+                'norm': 1,
+                'range': [0, 7],
+                'bins': 100,
+                'region_var': 'Pi2PipRegion'
+            },
+            {
+                'val': "Pi2PipTh",
+                'label': '$\\theta$ [deg]',
+                'norm': 180 / np.pi,
+                'range': [0, 110],
+                'bins': 100,
+                'region_var': 'Pi2PipRegion'
+            },
+            {
+                'val': "Pi2PimP",
+                'label': 'Momentum [GeV/c]',
+                'norm': 1,
+                'range': [0, 7],
+                'bins': 100,
+                'region_var': 'Pi2PimRegion'
+            },
+            {
+                'val': "Pi2PimTh",
+                'label': '$\\theta$ [deg]',
+                'norm': 180 / np.pi,
+                'range': [0, 110],
+                'bins': 100,
+                'region_var': 'Pi2PimRegion'
+            },
+        ]
+
+        for c, (region, label) in enumerate(DETECTOR_REGIONS.items()):
+            n = (len(vals)+len(vals) % 2)
+            cols = 2
+            height = 5  # per row
+            width = 16
+            fig, ax = plt.subplots(int(n/cols), cols,
+                                   figsize=(width, (n/cols)*height))
+            axes = ax.flatten()
+            for j, (data_label, data) in enumerate(self.datasets.items()):
+                for i, v in enumerate(vals):
+                    # cut down the range for FT plots
+                    if v['val'][-2:] == 'Th' and region == 1000:
+                        x_range = [0, 10]
+                    else:
+                        x_range = v['range']
+                    h = axes[i].hist(
+                        np.array(data[data[v['region_var']]==region][v['val']])*v['norm'],
+                        range=x_range, bins=v['bins'], label=data_label,
+                        density=density, **params)
+                    axes[i].set_title(v['val'].replace('Pi2', ''))
+                    axes[i].set_xlabel(v['label'])
+                    axes[i].set_ylabel('Events (per bin)')
+                    if len(self.datasets) > 1:
+                        axes[i].legend()
+            plt.tight_layout()
+
+            # create output dir if it doesnt exist
+            if not os.path.isdir(self.output_dir):
+                os.makedirs(self.output_dir)
+
+            fig.savefig(os.path.join(self.output_dir, label+filename))
+        plt.close('all')
+
+    def plot_2d_for_t_regions(self):
+        # mass bins
+        mbwidth = 0.2
+        mbins = np.arange(0, 2, mbwidth)
+
+        plots = [
+            {
+                'filename': 'pipt.png',
+                'vals': ['Pi2PipP', 'Pi2PipTh'],
+                'labels': ['$\\pi^+$ Mass [GeV/$c^2$]', '$\\pi^+$ Theta'],
+                'norm': [1, (180 / np.pi)],
+                'bins': 100,
+                'region_var': 'Pi2PipRegion'
+            },
+            {
+                'filename': 'pimt.png',
+                'vals': ['Pi2PimP', 'Pi2PimTh'],
+                'labels': ['$\\pi^-$ Mass [GeV/$c^2$]', '$\\pi^-$ Theta'],
+                'norm': [1, (180 / np.pi)],
+                'bins': 100,
+                'region_var': 'Pi2PimRegion'
+            }
+        ]
+
+        font = {
+            'family': 'serif',
+            'color':  'white',
+            'weight': 'normal',
+            'size': 14,
+        }
+
+        # set the plot ranges based on detector, mom vs theta
+        ranges = {
+            'FT': [[0, 8], [0, 10]],
+            'FD': [[0, 8], [0, 60]],
+            'CD': [[0, 4], [20, 100]],
+        }
+
+        _, data = list(self.datasets.items())[0]
+
+        for c, (region, reg_label) in enumerate(DETECTOR_REGIONS.items()):
+            for plot in plots:
+                vals = plot['vals']
+                labels = plot['labels']
+                norms = plot['norm']
+                region_var = plot['region_var']
+                bins = plot['bins']
+
+                fig, axes = plt.subplots(3, 3,
+                                        figsize=(12, 10),
+                                        sharex=True, sharey=True,
+                                        gridspec_kw={'hspace': 0, 'wspace': 0})
+                for i, ax in enumerate(axes.flatten()):
+                    if i>=len(mbins):
+                        ax.remove()
+                        continue
+                    mass_low = mbins[i]
+                    mass_high = mass_low + mbwidth
+                    d = data[
+                        np.array(-data['Pi2t'] >= mass_low) &
+                        np.array(-data['Pi2t'] <= mass_high) &
+                        np.array(data[region_var] == region)
+                    ]
+                    x, y = [np.array(d[vals[0]]), np.array(d[vals[1]])]
+
+                    xnorm, ynorm = norms
+
+                    ax.hist2d(x*xnorm, y*ynorm, range=ranges[reg_label], bins=bins)
+                    label = '{:.2f}>-t>{:.2f}'.format(mass_low, mass_high)
+                    ax.text(
+                        0.5, 0.90, label, fontdict=font, transform=ax.transAxes)
+
+                fig.text(0.5, 0.05, labels[0], va='center', ha='center', )
+                fig.text(0.07, 0.5, labels[1], va='center', ha='center', rotation='vertical')
+
+                # create output dir if it doesnt exist
+                if not os.path.isdir(self.output_dir):
+                    os.makedirs(self.output_dir)
+
+                fig.savefig(os.path.join(self.output_dir, reg_label+plot['filename']))
+
     def plot_meson_decay_angle(self):
         plots = [
             {

@@ -151,6 +151,8 @@ class Plotting(luigi.Task):
         A.plot_proton()
         A.plot_pip()
         A.plot_pim()
+        A.plot_2d_for_t_regions()
+        A.plot_1d_for_t_regions()
 
         # plots the data with cuts applied
         output_dir = os.path.join(self.output().path, 'cuts')
@@ -165,6 +167,8 @@ class Plotting(luigi.Task):
         A.plot_proton()
         A.plot_pip()
         A.plot_pim()
+        A.plot_2d_for_t_regions()
+        A.plot_1d_for_t_regions()
 
 
 class PlotFile(luigi.Task):
@@ -220,6 +224,7 @@ class PlotFilesComparison(luigi.Task):
         A.plot_pip()
         A.plot_pim()
         A.plot_meson_decay_angle_1D(density=True)
+        A.plot_1d_for_t_regions(density=True)
 
 
 class MomentFitting(luigi.Task):
