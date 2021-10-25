@@ -369,31 +369,69 @@ class Analysis:
         plt.close('all')
 
     def plot_meson_2D(self):
-        val1 = ["Pi2MesonMass", "2$\pi$ Mass"]
-        val2 = ["Pi2D0Mass",    "$\Delta$0 Mass"]
-        val3 = ["Pi2DppMass",   "$\Delta$++ Mass"]
 
-        params = {
-            'range': [[0.5, 2.5], [1, 3.5]],
-            'bins': 100,
-        }
-
+        plots = [
+            {
+                'filename': 'meson_ppim_2D.png',
+                'vals': ["Pi2MesonMass", "Pi2D0Mass"],
+                'labels': ['Meson Mass [GeV/$c^2$]', 'p+$\\pi^-$ Mass [GeV/$c^2$]'],
+                'norm': [1, 1],
+                'range': [[0.5, 2.5], [1, 3.5]],
+                'bins': 100,
+            },
+            {
+                'filename': 'meson_ppip_2D.png',
+                'vals': ["Pi2MesonMass", "Pi2DppMass"],
+                'labels': ['Meson Mass [GeV/$c^2$]', 'p+$\\pi^+$ Mass [GeV/$c^2$]'],
+                'norm': [1, 1],
+                'range': [[0.5, 2.5], [1, 3.5]],
+                'bins': 100,
+            },
+            {
+                'filename': 'meson_t_2D.png',
+                'vals': ["Pi2MesonMass", "Pi2t"],
+                'labels': ['Meson Mass [GeV/$c^2$]', '-t'],
+                'norm': [1, -1],
+                'range': [[0.5, 2.5], [0, 4]],
+                'bins': 100,
+            },
+            {
+                'filename': 'ppim_t_2D.png',
+                'vals': ["Pi2D0Mass", "Pi2t"],
+                'labels': ['p+$\\pi^-$ Mass [GeV/$c^2$]', '-t'],
+                'norm': [1, -1],
+                'range': [[1, 3.5], [0, 4]],
+                'bins': 100,
+            },
+            {
+                'filename': 'ppip_t_2D.png',
+                'vals': ["Pi2DppMass", "Pi2t"],
+                'labels': ['p+$\\pi^+$ Mass [GeV/$c^2$]', '-t'],
+                'norm': [1, -1],
+                'range': [[1, 3.5], [0, 4]],
+                'bins': 100,
+            },
+        ]
+        # only first dataset for now
         _, data = list(self.datasets.items())[0]
+        fig, axes = plt.subplots(3, 2, figsize=(16, 18))
+        axes = axes.flatten()
+        for i, plot in enumerate(plots):
+            ax = axes[i]
+            vals = plot['vals']
+            labels = plot['labels']
+            xnorm, ynorm = plot['norm']
+            bins = plot['bins']
+            r = plot['range']
 
-        fig, axes = plt.subplots(1, 2, figsize=(16,6))
-        axes[0].hist2d(
-            np.array(data[val1[0]]), 
-            np.array(data[val2[0]]),
-            **params)
-        axes[0].set_xlabel(val1[1])
-        axes[0].set_ylabel(val2[1])
+            x, y = [
+                np.array(data[vals[0]])*xnorm,
+                np.array(data[vals[1]])*ynorm
+            ]
 
-        axes[1].hist2d(
-            np.array(data[val1[0]]), 
-            np.array(data[val3[0]]),
-            **params)
-        axes[1].set_xlabel(val1[1])
-        axes[1].set_ylabel(val3[1])
+            ax.hist2d(x, y, range=r, bins=bins)
+            ax.set_xlabel(labels[0])
+            ax.set_ylabel(labels[1])
 
         plt.tight_layout()
 
