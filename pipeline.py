@@ -169,6 +169,7 @@ class Plotting(luigi.Task):
         A.plot_pim()
         A.plot_2d_for_t_regions()
         A.plot_1d_for_t_regions()
+        A.plot_2d_mesons_for_t()
 
 
 class PlotFile(luigi.Task):
@@ -195,6 +196,9 @@ class PlotFile(luigi.Task):
         A.plot_pim()
         A.plot_meson_2D()
         A.plot_meson_decay_angle()
+        A.plot_2d_for_t_regions()
+        A.plot_1d_for_t_regions()
+        A.plot_2d_mesons_for_t()
 
 
 class PlotFilesComparison(luigi.Task):

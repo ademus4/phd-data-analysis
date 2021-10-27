@@ -547,6 +547,77 @@ class Analysis:
             fig.savefig(os.path.join(self.output_dir, label+filename))
         plt.close('all')
 
+    def plot_2d_mesons_for_t(self):
+        # mass bins
+        mbwidth = 0.2
+        mbins = np.arange(0, 2, mbwidth)
+
+        plots = [
+            {
+                'filename': 'meson_ppim_2D_for_t.png',
+                'vals': ["Pi2MesonMass", "Pi2D0Mass"],
+                'labels': ['Meson Mass [GeV/$c^2$]', 'p+$\\pi^-$ Mass [GeV/$c^2$]'],
+                'norm': [1, 1],
+                'range': [[0.5, 2.5], [1, 3.5]],
+                'bins': 100,
+            },
+            {
+                'filename': 'meson_ppip_2D_for_t.png',
+                'vals': ["Pi2MesonMass", "Pi2DppMass"],
+                'labels': ['Meson Mass [GeV/$c^2$]', 'p+$\\pi^+$ Mass [GeV/$c^2$]'],
+                'norm': [1, 1],
+                'range': [[0.5, 2.5], [1, 3.5]],
+                'bins': 100,
+            },
+        ]
+
+        font = {
+            'family': 'serif',
+            'color':  'white',
+            'weight': 'normal',
+            'size': 14,
+        }
+
+        _, data = list(self.datasets.items())[0]
+
+        for plot in plots:
+            vals = plot['vals']
+            labels = plot['labels']
+            norms = plot['norm']
+            bins = plot['bins']
+            r = plot['range']
+
+            fig, axes = plt.subplots(3, 3,
+                                    figsize=(12, 10),
+                                    sharex=True, sharey=True,
+                                    gridspec_kw={'hspace': 0, 'wspace': 0})
+            for i, ax in enumerate(axes.flatten()):
+                if i>=len(mbins):
+                    ax.remove()
+                    continue
+                mass_low = mbins[i]
+                mass_high = mass_low + mbwidth
+                d = data[
+                    np.array(-data['Pi2t'] >= mass_low) &
+                    np.array(-data['Pi2t'] <= mass_high)
+                ]
+                xnorm, ynorm = norms
+                x, y = [np.array(d[vals[0]])*xnorm, np.array(d[vals[1]])*ynorm]
+
+                ax.hist2d(x*xnorm, y*ynorm, range=r, bins=bins)
+                label = '{:.2f}>-t>{:.2f}'.format(mass_low, mass_high)
+                ax.text(
+                    0.5, 0.90, label, fontdict=font, transform=ax.transAxes)
+
+            fig.text(0.5, 0.05, labels[0], va='center', ha='center', )
+            fig.text(0.07, 0.5, labels[1], va='center', ha='center', rotation='vertical')
+
+            # create output dir if it doesnt exist
+            if not os.path.isdir(self.output_dir):
+                os.makedirs(self.output_dir)
+
+            fig.savefig(os.path.join(self.output_dir, plot['filename']))
+
     def plot_2d_for_t_regions(self):
         # mass bins
         mbwidth = 0.2
