@@ -186,9 +186,8 @@ class PlotFile(luigi.Task):
         # plots
         output_dir = self.output().path
         A = Analysis(output_dir=output_dir)
-        A.load_data(self.input_file, topo=0)
+        A.load_data(self.input_file, tree='withcuts', label='data', topo=0)
         A.plot_exc_cuts()
-        A.plot_timing()
         A.plot_mesons()
         A.plot_electron()
         A.plot_proton()
