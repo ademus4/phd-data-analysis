@@ -16,27 +16,30 @@
   pcm.AddParticleCut("pi-",   new DeltaTimeVerCut(1));
   FS->RegisterPostTopoAction(pcm);
 
-  ParticleCutsManager pcm2{"DeltaTimeCuts_05",0};  //1==apply!
+  //0.5ns cut
+  ParticleCutsManager pcm2{"DeltaTimeCuts_05",0};
   pcm2.AddParticleCut("e-",    new DeltaTimeVerCut(0.5));
   pcm2.AddParticleCut("proton",new DeltaTimeVerCut(0.5));
   pcm2.AddParticleCut("pi+",   new DeltaTimeVerCut(0.5));
   pcm2.AddParticleCut("pi-",   new DeltaTimeVerCut(0.5));
   FS->RegisterPostTopoAction(pcm2);
 
-  //for simulations, to correct for start time
-  //FS->SetStartTimePeak(124.25);
-  //FS->HalveBunchTime();
+  //0.2ns cut
+  ParticleCutsManager pcm3{"DeltaTimeCuts_02",0};
+  pcm3.AddParticleCut("e-",    new DeltaTimeVerCut(0.2));
+  pcm3.AddParticleCut("proton",new DeltaTimeVerCut(0.2));
+  pcm3.AddParticleCut("pi+",   new DeltaTimeVerCut(0.2));
+  pcm3.AddParticleCut("pi-",   new DeltaTimeVerCut(0.2));
+  FS->RegisterPostTopoAction(pcm3);
 
   //set start time
   StartTimeAction st("StartTime",new C12StartTimeFromParticle("Electron"));  //better
-  //StartTimeAction st("EBStartTime",new C12StartTimeFromVtFTB());
   FS->RegisterPreTopoAction(st);
 
   //FT electron energy correction
   ParticleCorrectionManager pcorrm{"FTelEnergyCorrection"};
   pcorrm.AddParticle("e-",new FTel_pol4_ECorrection());
   FS->RegisterPreTopoAction(pcorrm);
-
 
   //truth matching
   EventTruthAction etra("EventTruth");
