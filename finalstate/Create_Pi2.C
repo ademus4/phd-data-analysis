@@ -1,5 +1,5 @@
 {
-  auto FS = adamt::Pi2::Make("NONE","ALL"); // removal second all, exact number (exclusive)
+  auto FS = adamt::Pi2::Make("NONE","ALL"); // (use EB PID, exact number, exclusive)
   FS->AddTopology("Electron:Proton:Pip:Pim");
   FS->AddTopology("Electron:Proton:Pim");
   FS->AddTopology("Electron:Proton:Pip");
@@ -31,6 +31,11 @@
   pcm3.AddParticleCut("pi+",   new DeltaTimeVerCut(0.2));
   pcm3.AddParticleCut("pi-",   new DeltaTimeVerCut(0.2));
   FS->RegisterPostTopoAction(pcm3);
+
+  //correction for electron
+  ParticleCorrectionManager pVz{"FTelVz"};//1=> for simulation too
+  pVz.AddParticle("e-",new FTel_VzCorrection(-0.05));//5cm shift
+  FS->RegisterPreTopoAction(pVz);
 
   //set start time
   StartTimeAction st("StartTime",new C12StartTimeFromParticle("Electron"));  //better
