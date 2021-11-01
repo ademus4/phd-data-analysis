@@ -441,6 +441,105 @@ class Analysis:
 
         fig.savefig(os.path.join(self.output_dir, 'meson_2D_plots.png'))
 
+    def plot_beta_2D(self):
+        plots = [
+            {
+                'title': 'Electron',
+                'vals': ["Pi2ElBeta", "Pi2ElP"],
+                'labels': ['Beta', 'P'],
+                'norm': [1, 1],
+                'range': [[0.8, 1.2], [0, 8]],
+                'bins': 100,
+            },
+            {
+                'title': 'Proton',
+                'vals': ["Pi2ProtBeta", "Pi2ProtP"],
+                'labels': ['Beta', 'P'],
+                'norm': [1, 1],
+                'range': [[0.2, 1.2], [0, 4]],
+                'bins': 100,
+            },
+            {
+                'title': '$\pi^+$',
+                'vals': ["Pi2PipBeta", "Pi2PipP"],
+                'labels': ['Beta', 'P'],
+                'norm': [1, 1],
+                'range': [[0.9, 1.1], [0, 8]],
+                'bins': 100,
+            },
+            {
+                'title': '$\pi^-$',
+                'vals': ["Pi2PimBeta", "Pi2PimP"],
+                'labels': ['Beta', 'P'],
+                'norm': [1, 1],
+                'range': [[0.9, 1.1], [0, 7]],
+                'bins': 100,
+            },
+            {
+                'title': 'Electron',
+                'vals': ["Pi2ElBeta2", "Pi2ElP"],
+                'labels': ['BetaVer', 'P'],
+                'norm': [1, 1],
+                'range': [[0.8, 1.2], [0, 8]],
+                'bins': 100,
+            },
+            {
+                'title': 'Proton',
+                'vals': ["Pi2ProtBeta2", "Pi2ProtP"],
+                'labels': ['BetaVer', 'P'],
+                'norm': [1, 1],
+                'range': [[0.2, 1.2], [0, 4]],
+                'bins': 100,
+            },
+            {
+                'title': '$\pi^+$',
+                'vals': ["Pi2PipBeta2", "Pi2PipP"],
+                'labels': ['BetaVer', 'P'],
+                'norm': [1, 1],
+                'range': [[0.9, 1.1], [0, 8]],
+                'bins': 100,
+            },
+            {
+                'title': '$\pi^-$',
+                'vals': ["Pi2PimBeta2", "Pi2PimP"],
+                'labels': ['BetaVer', 'P'],
+                'norm': [1, 1],
+                'range': [[0.9, 1.1], [0, 7]],
+                'bins': 100,
+            }
+        ]
+        # only first dataset for now
+        _, data = list(self.datasets.items())[0]
+        fig, axes = plt.subplots(4, 2, figsize=(16, 24))
+        axes = axes.flatten()
+        for i, plot in enumerate(plots):
+            ax = axes[i]
+            title = plot['title']
+            vals = plot['vals']
+            labels = plot['labels']
+            xnorm, ynorm = plot['norm']
+            bins = plot['bins']
+            r = plot['range']
+
+            x, y = [
+                np.array(data[vals[0]])*xnorm,
+                np.array(data[vals[1]])*ynorm
+            ]
+
+            ax.hist2d(x, y, range=r, bins=bins)
+            ax.set_xlabel(labels[0])
+            ax.set_ylabel(labels[1])
+            ax.set_title(title)
+
+        plt.tight_layout()
+
+        # create output dir if it doesnt exist
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        fig.savefig(os.path.join(self.output_dir, 'beta_2D_plots.png'))
+
+
     def plot_1d_for_t_regions(self, filename='_1d_for_t.png', density=False):
         params = {
             'histtype': 'step',
