@@ -34,7 +34,7 @@
 
   //correction for electron
   ParticleCorrectionManager pVz{"FTelVz"};//1=> for simulation too
-  pVz.AddParticle("e-",new FTel_VzCorrection(-0.05));//5cm shift
+  pVz.AddParticle("e-",new FTel_VzCorrection(-0.03));// 3cm shift
   FS->RegisterPreTopoAction(pVz);
 
   //set start time

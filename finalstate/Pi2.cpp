@@ -52,32 +52,36 @@ namespace adamt{
 
       TD->ElTh       =_electron.CLAS12()->getTheta();
       TD->ElP        =_electron.CLAS12()->getP();
-      TD->ElTime     =_electron.CLAS12()->getTime();
+      TD->ElDTime    =_electron.DeltaTime();
+      TD->ElDTimeVer =_electron.DeltaTimeVer();
       TD->ElDE       =_electron.CLAS12()->getDeltaEnergy();
       TD->ElRegion   =_electron.CLAS12()->getRegion();
       TD->ElBeta     =_electron.Beta();
-      TD->ElBeta2    =_electron.BetaVer();
+      TD->ElBetaVer  =_electron.BetaVer();
 
-      TD->ProtTh     =_proton.CLAS12()->getTheta();
-      TD->ProtP      =_proton.CLAS12()->getP();
-      TD->ProtTime   =_proton.CLAS12()->getTime();
-      TD->ProtRegion =_proton.CLAS12()->getRegion();
-      TD->ProtBeta   =_proton.Beta();
-      TD->ProtBeta2  =_proton.BetaVer();
+      TD->ProtTh       =_proton.CLAS12()->getTheta();
+      TD->ProtP        =_proton.CLAS12()->getP();
+      TD->ProtDTime    =_proton.DeltaTime();
+      TD->ProtDTimeVer =_proton.DeltaTimeVer();
+      TD->ProtRegion   =_proton.CLAS12()->getRegion();
+      TD->ProtBeta     =_proton.Beta();
+      TD->ProtBetaVer  =_proton.BetaVer();
 
-      TD->PipTh      =_pip.CLAS12()->getTheta();
-      TD->PipP       =_pip.CLAS12()->getP();
-      TD->PipTime    =_pip.CLAS12()->getTime();
-      TD->PipRegion  =_pip.CLAS12()->getRegion();
-      TD->PipBeta    =_pip.Beta();
-      TD->PipBeta2   =_pip.BetaVer();
+      TD->PipTh       =_pip.CLAS12()->getTheta();
+      TD->PipP        =_pip.CLAS12()->getP();
+      TD->PipDTime    =_pip.DeltaTime();
+      TD->PipDTimeVer =_pip.DeltaTimeVer();
+      TD->PipRegion   =_pip.CLAS12()->getRegion();
+      TD->PipBeta     =_pip.Beta();
+      TD->PipBetaVer  =_pip.BetaVer();
 
-      TD->PimTh      =_pim.CLAS12()->getTheta();
-      TD->PimP       =_pim.CLAS12()->getP();
-      TD->PimTime    =_pim.CLAS12()->getTime();
-      TD->PimRegion  =_pim.CLAS12()->getRegion();
-      TD->PimBeta    =_pim.Beta();
-      TD->PimBeta2   =_pim.BetaVer();
+      TD->PimTh       =_pim.CLAS12()->getTheta();
+      TD->PimP        =_pim.CLAS12()->getP();
+      TD->PimDTime    =_pim.DeltaTime();
+      TD->PimDTimeVer =_pim.DeltaTimeVer();
+      TD->PimRegion   =_pim.CLAS12()->getRegion();
+      TD->PimBeta     =_pim.Beta();
+      TD->PimBetaVer  =_pim.BetaVer();
 
       ///////------------------------------------///////
     };

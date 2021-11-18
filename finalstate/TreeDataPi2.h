@@ -69,32 +69,36 @@ namespace adamt{
   
     Double_t ElTh=0;
     Double_t ElP=0;
-    Double_t ElTime=0;
+    Double_t ElDTime=0;
+    Double_t ElDTimeVer=0;
     Double_t ElDE=0;
     Double_t ElRegion=0;
     Double_t ElBeta=0;
-    Double_t ElBeta2=0;
+    Double_t ElBetaVer=0;
 
     Double_t ProtTh=0;
     Double_t ProtP=0;
-    Double_t ProtTime=0;
+    Double_t ProtDTime=0;
+    Double_t ProtDTimeVer=0;
     Double_t ProtRegion=0;
     Double_t ProtBeta=0;
-    Double_t ProtBeta2=0;
+    Double_t ProtBetaVer=0;
 
     Double_t PipTh=0;
     Double_t PipP=0;
-    Double_t PipTime=0;
+    Double_t PipDTime=0;
+    Double_t PipDTimeVer=0;
     Double_t PipRegion=0;
     Double_t PipBeta=0;
-    Double_t PipBeta2=0;
+    Double_t PipBetaVer=0;
 
     Double_t PimTh=0;
     Double_t PimP=0;
-    Double_t PimTime=0; 
+    Double_t PimDTime=0;
+    Double_t PimDTimeVer=0;
     Double_t PimRegion=0;
     Double_t PimBeta=0;
-    Double_t PimBeta2=0;
+    Double_t PimBetaVer=0;
 
     ///////////////////////////////////////////////////////////
     //LEAVE THE FOLLOWING FUNCTIONS
