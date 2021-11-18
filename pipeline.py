@@ -153,7 +153,9 @@ class Plotting(luigi.Task):
         A.plot_pim()
         A.plot_2d_for_t_regions()
         A.plot_1d_for_t_regions()
+        A.plot_part_P_vs_angle()
         A.plot_beta_2D()
+        A.plot_timing_2D()
 
         # plots the data with cuts applied
         output_dir = os.path.join(self.output().path, 'cuts')
@@ -171,7 +173,9 @@ class Plotting(luigi.Task):
         A.plot_2d_for_t_regions()
         A.plot_1d_for_t_regions()
         A.plot_2d_mesons_for_t()
+        A.plot_part_P_vs_angle()
         A.plot_beta_2D()
+        A.plot_timing_2D()
 
 
 class PlotFile(luigi.Task):
@@ -201,7 +205,9 @@ class PlotFile(luigi.Task):
         A.plot_2d_for_t_regions()
         A.plot_1d_for_t_regions()
         A.plot_2d_mesons_for_t()
+        A.plot_part_P_vs_angle()
         A.plot_beta_2D()
+        A.plot_timing_2D()
 
 
 class PlotFilesComparison(luigi.Task):

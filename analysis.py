@@ -477,7 +477,7 @@ class Analysis:
             },
             {
                 'title': 'Electron',
-                'vals': ["Pi2ElBeta2", "Pi2ElP"],
+                'vals': ["Pi2ElBetaVer", "Pi2ElP"],
                 'labels': ['BetaVer', 'P'],
                 'norm': [1, 1],
                 'range': [[0.8, 1.2], [0, 8]],
@@ -485,7 +485,7 @@ class Analysis:
             },
             {
                 'title': 'Proton',
-                'vals': ["Pi2ProtBeta2", "Pi2ProtP"],
+                'vals': ["Pi2ProtBetaVer", "Pi2ProtP"],
                 'labels': ['BetaVer', 'P'],
                 'norm': [1, 1],
                 'range': [[0.2, 1.2], [0, 4]],
@@ -493,7 +493,7 @@ class Analysis:
             },
             {
                 'title': '$\pi^+$',
-                'vals': ["Pi2PipBeta2", "Pi2PipP"],
+                'vals': ["Pi2PipBetaVer", "Pi2PipP"],
                 'labels': ['BetaVer', 'P'],
                 'norm': [1, 1],
                 'range': [[0.9, 1.1], [0, 8]],
@@ -501,7 +501,7 @@ class Analysis:
             },
             {
                 'title': '$\pi^-$',
-                'vals': ["Pi2PimBeta2", "Pi2PimP"],
+                'vals': ["Pi2PimBetaVer", "Pi2PimP"],
                 'labels': ['BetaVer', 'P'],
                 'norm': [1, 1],
                 'range': [[0.9, 1.1], [0, 7]],
@@ -539,6 +539,103 @@ class Analysis:
 
         fig.savefig(os.path.join(self.output_dir, 'beta_2D_plots.png'))
 
+    def plot_timing_2D(self):
+        plots = [
+            {
+                'title': 'Electron',
+                'vals': ["Pi2ElDTime", "Pi2ElP"],
+                'labels': ['Delta-time [ns]', 'P'],
+                'norm': [1, 1],
+                'range': [[-1.5, 1.5], [0, 8]],
+                'bins': 100,
+            },
+            {
+                'title': 'Proton',
+                'vals': ["Pi2ProtDTime", "Pi2ProtP"],
+                'labels': ['Delta-time [ns]', 'P'],
+                'norm': [1, 1],
+                'range': [[-1.5, 1.5], [0, 4]],
+                'bins': 100,
+            },
+            {
+                'title': '$\pi^+$',
+                'vals': ["Pi2PipDTime", "Pi2PipP"],
+                'labels': ['Delta-time [ns]', 'P'],
+                'norm': [1, 1],
+                'range': [[-1.5, 1.5], [0, 8]],
+                'bins': 100,
+            },
+            {
+                'title': '$\pi^-$',
+                'vals': ["Pi2PimDTime", "Pi2PimP"],
+                'labels': ['Delta-time [ns]', 'P'],
+                'norm': [1, 1],
+                'range': [[-1.5, 1.5], [0, 7]],
+                'bins': 100,
+            },
+            {
+                'title': 'Electron',
+                'vals': ["Pi2ElDTimeVer", "Pi2ElP"],
+                'labels': ['Delta-time (vertex) [ns]', 'P'],
+                'norm': [1, 1],
+                'range': [[-1.5, 1.5], [0, 8]],
+                'bins': 100,
+            },
+            {
+                'title': 'Proton',
+                'vals': ["Pi2ProtDTimeVer", "Pi2ProtP"],
+                'labels': ['Delta-time (vertex) [ns]', 'P'],
+                'norm': [1, 1],
+                'range': [[-1.5, 1.5], [0, 4]],
+                'bins': 100,
+            },
+            {
+                'title': '$\pi^+$',
+                'vals': ["Pi2PipDTimeVer", "Pi2PipP"],
+                'labels': ['Delta-time (vertex) [ns]', 'P'],
+                'norm': [1, 1],
+                'range': [[-1.5, 1.5], [0, 8]],
+                'bins': 100,
+            },
+            {
+                'title': '$\pi^-$',
+                'vals': ["Pi2PimDTimeVer", "Pi2PimP"],
+                'labels': ['Delta-time (vertex) [ns]', 'P'],
+                'norm': [1, 1],
+                'range': [[-1.5, 1.5], [0, 7]],
+                'bins': 100,
+            }
+        ]
+        # only first dataset for now
+        _, data = list(self.datasets.items())[0]
+        fig, axes = plt.subplots(4, 2, figsize=(16, 24))
+        axes = axes.flatten()
+        for i, plot in enumerate(plots):
+            ax = axes[i]
+            title = plot['title']
+            vals = plot['vals']
+            labels = plot['labels']
+            xnorm, ynorm = plot['norm']
+            bins = plot['bins']
+            r = plot['range']
+
+            x, y = [
+                np.array(data[vals[0]])*xnorm,
+                np.array(data[vals[1]])*ynorm
+            ]
+
+            ax.hist2d(x, y, range=r, bins=bins)
+            ax.set_xlabel(labels[0])
+            ax.set_ylabel(labels[1])
+            ax.set_title(title)
+
+        plt.tight_layout()
+
+        # create output dir if it doesnt exist
+        if not os.path.isdir(self.output_dir):
+            os.makedirs(self.output_dir)
+
+        fig.savefig(os.path.join(self.output_dir, 'timing_2D_plots.png'))
 
     def plot_1d_for_t_regions(self, filename='_1d_for_t.png', density=False):
         params = {
@@ -797,6 +894,82 @@ class Analysis:
                     os.makedirs(self.output_dir)
 
                 fig.savefig(os.path.join(self.output_dir, reg_label+plot['filename']))
+
+
+    def plot_part_P_vs_angle(self):
+        plots = [
+            {
+                'title': 'Electron',
+                'vals': ['Pi2ElTh', 'Pi2ElP'],
+                'labels': ['$\\theta$', 'Momentum [GeV/$c$]'],
+                'params': {
+                    'range': [[2, 5], [0, 6]],
+                    'bins': 100,
+                },
+                'norm': [(180 / np.pi), 1],
+            },
+            {
+                'title': 'Proton',
+                'vals': ['Pi2ProtTh', 'Pi2ProtP'],
+                'labels': ['$\\theta$', 'Momentum [GeV/$c$]'],
+                'params': {
+                    'range': [[20, 70], [0, 2]],
+                    'bins': 100,
+                },
+                'norm': [(180 / np.pi), 1],
+            },
+            {
+                'title': 'Pi-',
+                'vals': ['Pi2PimTh', 'Pi2PimP'],
+                'labels': ['$\\theta$', 'Momentum [GeV/$c$]'],
+                'params': {
+                    'range': [[5, 50], [0, 8]],
+                    'bins': 100,
+                },
+                'norm': [(180 / np.pi), 1],
+            },
+            {
+                'title': 'Pi+',
+                'vals': ['Pi2PipTh', 'Pi2PipP'],
+                'labels': ['$\\theta$', 'Momentum [GeV/$c$]'],
+                'params': {
+                    'range': [[5, 40], [0, 8]],
+                    'bins': 100,
+                },
+                'norm': [(180 / np.pi), 1],
+            },
+        ]
+
+        font = {
+            'family': 'serif',
+            'color':  'white',
+            'weight': 'normal',
+            'size': 14,
+        }
+
+        _, data = list(self.datasets.items())[0]
+        fig, ax = plt.subplots(2, 2, figsize=(16, 10))
+        ax = ax.flatten()
+        for i, plot in enumerate(plots):
+            title = plot['title']
+            params = plot['params']
+            xval, yval = plot['vals']
+            xlabel, ylabel = plot['labels']
+            xnorm, ynorm = plot['norm']
+            
+            x, y = np.array(data[xval])*xnorm, np.array(data[yval])*ynorm
+            ax[i].hist2d(x, y, **params)
+            ax[i].set_xlabel(xlabel)
+            ax[i].set_ylabel(ylabel)
+            ax[i].set_title(title)
+
+            # create output dir if it doesnt exist
+            if not os.path.isdir(self.output_dir):
+                os.makedirs(self.output_dir)
+                
+            plt.tight_layout()
+        fig.savefig(os.path.join(self.output_dir, 'particle_P_vs_angle.png'))
+
 
     def plot_meson_decay_angle(self):
         plots = [
