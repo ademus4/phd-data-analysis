@@ -46,8 +46,8 @@ class FinalState(ExternalPythonProgramTask):
 
     def output(self):
         _, fname = os.path.split(self.input_file)
-        folder = fname.replace('.hipo', '')
-        output_path = os.path.join(self.output_dir, folder)
+        run = fname.replace('.hipo', '')
+        output_path = os.path.join(self.output_dir, 'finalstate', run)
         return luigi.LocalTarget(output_path)
 
     def program_args(self):
@@ -67,23 +67,19 @@ class ApplyCuts(luigi.Task):
 
     def output(self):
         _, fname = os.path.split(self.input_file)
-        folder = fname.replace('.hipo', '')
-        output_path = os.path.join(self.output_dir, folder, 'data_cuts.root')
+        run = fname.replace('.hipo', '')
+        output_path = os.path.join(self.output_dir, 'cuts', run + '.root')
         return luigi.LocalTarget(output_path)
 
     def requires(self):
         yield FinalState(self.input_file, self.output_dir)
 
     def run(self):
-        # load finalstate root file using uproot3
-        # filter data based on cut parameters
-        # save in a seperate folder? output/skim3_******/filtered_data.root
         data_path = os.path.join(
             self.input()[0].path, 
             'adamt/Pi2_config__/FinalState.root'  # finalstate
         )
         data_tree = 'FINALOUTTREE'
-
 
         # load into dataframe ready for cuts
         df = ROOT.RDataFrame(data_tree, data_path)
@@ -112,7 +108,7 @@ class MergeData(ExternalProgramTask):
         return ["hadd", self.output().path] + glob(self.input_files)
 
     def output(self):
-        return luigi.LocalTarget(os.path.join(self.output_dir,
+        return luigi.LocalTarget(os.path.join(self.output_dir, 'merged',
                                               self.output_filename))
 
 
@@ -121,8 +117,9 @@ class Plotting(luigi.Task):
     output_dir = luigi.Parameter(default=DefaultParams().output_dir)
 
     def output(self):
-        prefix = self.input()[0][0].path.split('/')[-1]
-        output_path = os.path.join(self.output_dir, prefix, 'plots')
+        _, fname = os.path.split(self.input_file)
+        run = fname.replace('.hipo', '')
+        output_path = os.path.join(self.output_dir, 'plots', run)
         return luigi.LocalTarget(output_path)
 
     def requires(self):
