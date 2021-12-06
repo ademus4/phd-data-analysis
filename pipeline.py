@@ -138,7 +138,7 @@ class Plotting(luigi.Task):
         # plot the raw data first
         output_dir = self.output().path
         A = Analysis(output_dir=output_dir)
-        A.load_data(file_path_data, tree='FINALOUTTREE', label='data', topo=0)
+        A.load_data(file_path_data, label='data', topo=0)
         A.plot_exc_cuts()
         A.plot_mesons()
         A.plot_meson_2D()
@@ -157,7 +157,7 @@ class Plotting(luigi.Task):
         # plots the data with cuts applied
         output_dir = os.path.join(self.output().path, 'cuts')
         A = Analysis(output_dir=output_dir)
-        A.load_data(file_path_cuts, tree='withcuts', label='data', topo=0)
+        A.load_data(file_path_cuts, label='data', topo=0)
         A.plot_exc_cuts()
         A.plot_mesons()
         A.plot_meson_2D()
@@ -189,7 +189,7 @@ class PlotFile(luigi.Task):
         # plots
         output_dir = self.output().path
         A = Analysis(output_dir=output_dir)
-        A.load_data(self.input_file, tree='withcuts', label='data', topo=0)
+        A.load_data(self.input_file, label='data', topo=0)
         A.plot_exc_cuts()
         A.plot_mesons()
         A.plot_electron()
@@ -210,10 +210,8 @@ class PlotFile(luigi.Task):
 class PlotFilesComparison(luigi.Task):
     input_file1 = luigi.Parameter()
     label1 = luigi.Parameter()
-    tree1 = luigi.Parameter()
     input_file2 = luigi.Parameter()
     label2 = luigi.Parameter()
-    tree2 = luigi.Parameter()
     output_dir = luigi.Parameter(default=DefaultParams().output_dir)
 
     def output(self):
@@ -225,8 +223,8 @@ class PlotFilesComparison(luigi.Task):
         # plots
         output_dir = self.output().path
         A = Analysis(output_dir=output_dir)
-        A.load_data(self.input_file1, self.tree1, self.label1, topo=0)
-        A.load_data(self.input_file2, self.tree2, self.label2, topo=0)
+        A.load_data(self.input_file1, self.label1, topo=0)
+        A.load_data(self.input_file2, self.label2, topo=0)
         A.plot_exc_cuts(density=True)
         A.plot_mesons(density=True)
         A.plot_electron(density=True)

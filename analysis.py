@@ -40,13 +40,13 @@ class Analysis:
         plt.rcParams['xtick.labelsize'] = 14
         plt.rcParams['ytick.labelsize'] = 14
 
-    def load_data(self, path, tree, label, topo=None):
+    def load_data(self, path, label, topo=None):
         if len(self.datasets) == 2:
             raise ValueError('Cannot compare more than 2 datasets')
 
         print("Loading:")
         print(path)
-        tree_data = uproot4.lazy({path: tree},
+        tree_data = uproot4.lazy(path,
                                  executor=self.executor,
                                  blocking=False,
                                  cache=self.cache)
