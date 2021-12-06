@@ -14,7 +14,7 @@ class ProcessData(luigi.WrapperTask):
         # get a list of hipo files in the path and submit them as plotting tasks
         input_files = glob(self.input_path)
         for item in input_files:
-            yield pipeline.Plotting(item, output_dir=self.output_path)
+            yield pipeline.ApplyCuts(item, output_dir=self.output_path)
 
 
 class ProcessSims(luigi.WrapperTask):
@@ -26,7 +26,7 @@ class ProcessSims(luigi.WrapperTask):
         # get a list of hipo files in the path and submit them as plotting tasks
         input_files = glob(self.input_path)
         for item in input_files:
-            yield pipeline.Plotting(item, output_dir=self.output_path)
+            yield pipeline.ApplyCuts(item, output_dir=self.output_path)
 
 
 class AnalyseMoments(luigi.WrapperTask):
