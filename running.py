@@ -8,14 +8,14 @@ import pipeline
 class ProcessData(luigi.WrapperTask):
     input_path = luigi.Parameter()
     folder = luigi.Parameter(default="data")
-    output_path = luigi.Parameter(
-        os.path.join(pipeline.DefaultParams().output_dir, folder))
+    output_dir = luigi.Parameter(pipeline.DefaultParams().output_dir)
 
     def requires(self):
         # get a list of hipo files in the path and submit them as plotting tasks
         input_files = glob(self.input_path)
+        output_path = os.path.join(self.output_dir, self.folder)
         for item in input_files:
-            yield pipeline.ApplyCuts(item, output_dir=self.output_path)
+            yield pipeline.ApplyCuts(item, output_dir=output_path)
 
 
 class AnalyseMoments(luigi.WrapperTask):
